@@ -1,17 +1,39 @@
 <script setup lang="ts">
+import { ref, computed } from 'vue'
 import { RouterView } from 'vue-router'
+import TopAppBar from './components/TopAppBar.vue'
+import BottomNavigation from './components/BottomNavigation.vue'
+import MobileDrawer from './components/MobileDrawer.vue'
+import { useAuthStore } from '../../features/auth/stores/useAuthStore'
+
+const authStore = useAuthStore()
+
+const isDrawerOpen = ref(false)
+
+const toggleDrawer = () => {
+  isDrawerOpen.value = !isDrawerOpen.value
+}
+
+const userInitial = computed(() => {
+  return authStore.user?.name?.charAt(0).toUpperCase() || 'U'
+})
 </script>
 
 <template>
   <div class="dashboard-layout">
-    <aside class="sidebar">
+    <!-- Mobile Navigation Components -->
+    <TopAppBar @toggle-drawer="toggleDrawer" />
+    <MobileDrawer :is-open="isDrawerOpen" @close-drawer="isDrawerOpen = false" />
+
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar desktop-only">
       <div class="user-profile">
         <div class="avatar-fallback">
-          <span class="material-symbols-outlined avatar-icon">person</span>
+          <span class="avatar-initial">{{ userInitial }}</span>
         </div>
         <div class="user-info">
-          <h4 class="user-name">Carl Haw</h4>
-          <span class="user-role">High Performance</span>
+          <h4 class="user-name">{{ authStore.user?.name || 'Usuario' }}</h4>
+          <span class="user-role">{{ authStore.user?.email || 'High Performance' }}</span>
         </div>
       </div>
 
@@ -46,7 +68,7 @@ import { RouterView } from 'vue-router'
     </aside>
 
     <main class="main-content">
-      <header class="topbar">
+      <header class="topbar desktop-only">
         <div class="topbar-right">
           <button class="icon-btn">
             <span class="material-symbols-outlined">notifications</span>
@@ -61,27 +83,72 @@ import { RouterView } from 'vue-router'
         <RouterView />
       </div>
     </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <BottomNavigation />
   </div>
 </template>
 
 <style scoped>
 .dashboard-layout {
   display: flex;
+  flex-direction: column; /* Mobile first: stack TopBar and Main Content vertically */
   height: 100vh;
   width: 100vw;
   overflow: hidden;
   background-color: var(--bg-app);
 }
 
-.sidebar {
-  width: var(--sidebar-width);
-  background-color: var(--sidebar-bg);
-  color: var(--color-white);
-  display: flex;
-  flex-direction: column;
-  padding: var(--space-6) var(--space-4);
+.desktop-only {
+  display: none;
 }
 
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.content-wrapper {
+  flex-grow: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+  padding-bottom: 90px; /* Space for bottom navigation */
+}
+
+@media (min-width: 769px) {
+  .dashboard-layout {
+    flex-direction: row;
+  }
+  
+  .desktop-only {
+    display: flex;
+  }
+
+  .sidebar.desktop-only {
+    width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    color: var(--color-white);
+    flex-direction: column;
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .topbar.desktop-only {
+    height: var(--topbar-height);
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 var(--space-8);
+  }
+
+  .content-wrapper {
+    padding: 0 var(--space-8) var(--space-8);
+    padding-bottom: var(--space-8); /* Reset padding since bottom nav is hidden */
+  }
+}
+
+/* Original Sidebar Styles applied to desktop-only sidebar */
 .user-profile {
   display: flex;
   align-items: center;
@@ -136,7 +203,7 @@ import { RouterView } from 'vue-router'
   padding: var(--space-3) var(--space-4);
   color: var(--color-white);
   text-decoration: none;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   font-size: 0.95rem;
   opacity: 0.7;
   transition: all 0.2s;
@@ -176,25 +243,6 @@ import { RouterView } from 'vue-router'
   gap: var(--space-2);
 }
 
-.btn-start-routine .material-symbols-outlined {
-  font-size: 1.25rem;
-}
-
-.main-content {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.topbar {
-  height: var(--topbar-height);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding: 0 var(--space-8);
-}
-
 .topbar-right {
   display: flex;
   gap: var(--space-4);
@@ -218,11 +266,5 @@ import { RouterView } from 'vue-router'
 
 .icon-btn:hover {
   opacity: 1;
-}
-
-.content-wrapper {
-  flex-grow: 1;
-  overflow-y: auto;
-  padding: 0 var(--space-8) var(--space-8);
 }
 </style>

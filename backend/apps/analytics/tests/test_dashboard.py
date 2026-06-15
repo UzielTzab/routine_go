@@ -64,8 +64,8 @@ class DashboardAPITestCase(TestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('access', response.data)
         
-        access_token = response.data['access']
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+        access_token = response.cookies.get('access_token').value
+        self.client.cookies['access_token'] = access_token
         
         # Test Dashboard endpoint
         url = reverse('analytics-dashboard')

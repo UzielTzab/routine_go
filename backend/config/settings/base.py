@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'apps.executions',
     'apps.schedule',
     'apps.analytics',
+    'apps.notifications',
     'rest_framework_simplejwt',
 ]
 
@@ -100,6 +101,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 CSRF_TRUSTED_ORIGINS = env.list('CSRF_TRUSTED_ORIGINS', default=[])
+CORS_ALLOW_CREDENTIALS = True
+AUTH_COOKIE_SECURE = env.bool('AUTH_COOKIE_SECURE', default=False)
 
 CELERY_BROKER_URL = env('CELERY_BROKER_URL', default='redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND', default='redis://localhost:6379/1')
@@ -110,7 +113,7 @@ CELERY_TIMEZONE = TIME_ZONE
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'apps.accounts.authentication.CookieJWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',

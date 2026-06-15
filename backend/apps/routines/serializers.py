@@ -18,3 +18,10 @@ class RoutineTemplateSerializer(serializers.ModelSerializer):
         model = RoutineTemplate
         fields = ['id', 'category', 'title', 'instructions', 'default_duration_minutes', 'priority', 'active', 'schedule_rules', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def create(self, validated_data):
+        schedule_rules_data = validated_data.pop('schedule_rules', [])
+        routine = RoutineTemplate.objects.create(**validated_data)
+        for rule_data in schedule_rules_data:
+            RoutineScheduleRule.objects.create(routine=routine, **rule_data)
+        return routine

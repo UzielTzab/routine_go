@@ -21,7 +21,7 @@ defineProps({
     class="base-button" 
     :class="[`variant-${variant}`, { 'is-block': block, 'is-disabled': disabled }]"
     :disabled="disabled"
-    @click="$emit('click')"
+    @click="$emit('click', $event)"
   >
     <slot name="icon"></slot>
     <slot></slot>

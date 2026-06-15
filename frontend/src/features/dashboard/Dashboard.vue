@@ -402,4 +402,21 @@ const metrics = [
   font-size: 0.75rem;
   color: var(--text-gray);
 }
+
+@media (max-width: 768px) {
+  .top-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-row {
+    grid-template-columns: 1fr;
+  }
+
+  .metrics-container {
+    overflow-x: auto;
+    justify-content: flex-start;
+    gap: var(--space-6);
+    padding-bottom: var(--space-4);
+  }
+}
 </style>

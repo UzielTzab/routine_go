@@ -18,7 +18,7 @@ class ExecutionStateMachineService:
     @transaction.atomic
     def start(cls, execution: RoutineExecution) -> RoutineExecution:
         cls._validate_not_terminal(execution)
-        if execution.status != 'PENDING' and execution.status != 'SNOOZED':
+        if execution.status not in ['PENDING', 'SNOOZED', 'NOTIFIED', 'EXPIRED']:
             raise ValidationError(f"Cannot start execution from status: {execution.status}")
 
         now = timezone.now()
@@ -93,7 +93,7 @@ class ExecutionStateMachineService:
     @transaction.atomic
     def snooze(cls, execution: RoutineExecution, minutes: int = 15) -> RoutineExecution:
         cls._validate_not_terminal(execution)
-        if execution.status not in ['PENDING', 'SNOOZED']:
+        if execution.status not in ['PENDING', 'SNOOZED', 'NOTIFIED', 'EXPIRED']:
             raise ValidationError(f"Cannot snooze execution from status: {execution.status}")
 
         now = timezone.now()

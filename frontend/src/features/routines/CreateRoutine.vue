@@ -6,6 +6,7 @@ import BaseInput from '../../shared/components/BaseInput.vue'
 import BaseSelect from '../../shared/components/BaseSelect.vue'
 import BaseSwitch from '../../shared/components/BaseSwitch.vue'
 import BaseButton from '../../shared/components/BaseButton.vue'
+import TimePicker from '../../shared/components/TimePicker.vue'
 import { useRoutineStore } from './stores/useRoutineStore'
 
 const routineStore = useRoutineStore()
@@ -45,15 +46,14 @@ const weekDays = [
 
 // Local icon map based on category name
 const getCategoryAppearance = (name: string) => {
-  const map: Record<string, { icon: string, color: string }> = {
-    'hygiene': { icon: '/images/icons/hygiene.png', color: 'var(--color-hygiene)' },
-    'exercise': { icon: '/images/icons/excersice.png', color: 'var(--color-exercise)' },
-    'focus': { icon: '/images/icons/focus.png', color: 'var(--color-focus)' },
-    'nutrition': { icon: '/images/icons/nutrition.png', color: 'var(--color-nutrition)' },
-    'sleep': { icon: '/images/icons/sleep.png', color: 'var(--color-sleep)' },
-  }
-  const lowerName = name.toLowerCase()
-  return map[lowerName] || { icon: '/images/icons/focus.png', color: 'var(--color-primary)' }
+  const lowerName = (name || '').toLowerCase()
+  if (lowerName.includes('higiene') || lowerName.includes('hygiene')) return { icon: '/images/icons/hygiene.png', color: 'var(--color-hygiene)' }
+  if (lowerName.includes('ejercicio') || lowerName.includes('exercise')) return { icon: '/images/icons/excersice.png', color: 'var(--color-exercise)' }
+  if (lowerName.includes('foco') || lowerName.includes('focus') || lowerName.includes('trabajo')) return { icon: '/images/icons/focus.png', color: 'var(--color-focus)' }
+  if (lowerName.includes('nutrición') || lowerName.includes('nutricion') || lowerName.includes('nutrition') || lowerName.includes('alimentación') || lowerName.includes('alimentacion')) return { icon: '/images/icons/nutrition.png', color: 'var(--color-nutrition)' }
+  if (lowerName.includes('sueño') || lowerName.includes('sleep')) return { icon: '/images/icons/sleep.png', color: 'var(--color-sleep)' }
+  
+  return { icon: '/images/icons/focus.png', color: 'var(--color-primary)' }
 }
 
 const toggleDay = (dayId: string) => {
@@ -70,14 +70,36 @@ const handleSave = async () => {
     return
   }
   
+  // Helper to parse duration string to minutes
+  const parseDuration = (dur: string) => {
+    const hours = parseInt(dur.split(' ')[0]) || 0
+    return hours * 60
+  }
+
+  // Helper to parse "08:00 AM" to "HH:MM"
+  const parseTime = (timeStr: string) => {
+    const [time, modifier] = timeStr.split(' ')
+    if (!modifier) return time
+    let [hours, minutes] = time.split(':')
+    if (hours === '12') hours = '00'
+    if (modifier === 'PM') hours = String(parseInt(hours, 10) + 12)
+    if (hours.length === 1) hours = '0' + hours
+    return `${hours}:${minutes}`
+  }
+
+  // Helper to map days to integers if needed by backend, 
+  // but for now we send the array as requested:
+  const dayMap: Record<string, string> = { 'L': '0', 'M': '1', 'X': '2', 'J': '3', 'V': '4', 'S': '5', 'D': '6' }
   const payload = {
-    name: routineName.value,
-    category_id: selectedCategoryId.value,
-    start_time: startTime.value, // Make sure backend expects this format or convert it
-    duration: duration.value,
-    days: selectedDays.value,
-    reminder: reminder.value,
-    auto_complete: autoComplete.value
+    title: routineName.value,
+    category: selectedCategoryId.value,
+    default_duration_minutes: parseDuration(duration.value),
+    schedule_rules: [{
+      days_of_week: selectedDays.value.map(d => dayMap[d]).join(','),
+      start_time: parseTime(startTime.value),
+      reminder_minutes: parseInt(reminder.value.split(' ')[0]) || 10,
+      auto_complete: autoComplete.value
+    }]
   }
 
   try {
@@ -108,108 +130,107 @@ onMounted(async () => {
     </header>
 
     <div class="form-container">
-      <BaseCard padding="2rem" class="form-card">
-        
-        <div v-if="errorCreate" class="error-banner">
-          {{ errorCreate }}
-        </div>
+      <form @submit.prevent="handleSave">
+        <BaseCard padding="2rem">
+          <div class="form-card">
+            
+            <div v-if="errorCreate" class="error-banner">
+              {{ errorCreate }}
+            </div>
 
-        <!-- Nombre -->
-        <div class="form-group">
-          <BaseInput 
-            v-model="routineName"
-            label="NOMBRE DE LA RUTINA"
-            placeholder="Ej. Bloque de Foco Profundo"
-          />
-        </div>
+            <!-- Nombre -->
+            <div class="form-group">
+              <BaseInput 
+                v-model="routineName"
+                label="NOMBRE DE LA RUTINA"
+                placeholder="Ej. Bloque de Foco Profundo"
+              />
+            </div>
 
-        <!-- Categoría -->
-        <div class="form-group">
-          <label class="group-label">CATEGORÍA</label>
-          <div v-if="loadingCategories" class="loading-text">Cargando categorías...</div>
-          <div v-else-if="errorCategories" class="error-text">{{ errorCategories }}</div>
-          <div v-else class="categories-row">
-            <button 
-              v-for="cat in categories" 
-              :key="cat.id"
-              class="category-btn"
-              :class="{ 'is-selected': selectedCategoryId === cat.id }"
-              :style="{ backgroundColor: getCategoryAppearance(cat.name || '').color }"
-              @click="selectedCategoryId = cat.id"
-              :title="cat.name"
-            >
-              <img :src="getCategoryAppearance(cat.name || '').icon" class="category-icon" />
-            </button>
+            <!-- Categoría -->
+            <div class="form-group">
+              <label class="group-label">CATEGORÍA</label>
+              <div v-if="loadingCategories" class="loading-text">Cargando categorías...</div>
+              <div v-else-if="errorCategories" class="error-text">{{ errorCategories }}</div>
+              <div v-else class="categories-row">
+                <button 
+                  type="button"
+                  v-for="cat in categories" 
+                  :key="cat.id"
+                  class="category-btn"
+                  :class="{ 'is-selected': selectedCategoryId === cat.id }"
+                  :style="{ backgroundColor: getCategoryAppearance(cat.name || '').color }"
+                  @click="selectedCategoryId = cat.id"
+                  :title="cat.name"
+                >
+                  <img :src="getCategoryAppearance(cat.name || '').icon" class="category-icon" />
+                </button>
+              </div>
+            </div>
+
+            <!-- Hora y Duración -->
+            <div class="form-row">
+              <TimePicker 
+                v-model="startTime"
+                label="HORA DE INICIO"
+              />
+              <BaseSelect 
+                v-model="duration"
+                label="DURACIÓN"
+                :options="durationOptions"
+              />
+            </div>
+
+            <!-- Días de la semana -->
+            <div class="form-group">
+              <label class="group-label">DÍAS DE LA SEMANA</label>
+              <div class="days-row">
+                <button
+                  type="button"
+                  v-for="day in weekDays"
+                  :key="day.id"
+                  class="day-btn"
+                  :class="{ 'is-active': selectedDays.includes(day.id) }"
+                  @click="toggleDay(day.id)"
+                >
+                  {{ day.label }}
+                </button>
+              </div>
+            </div>
+
+            <!-- Aviso Previo -->
+            <div class="form-group half-width">
+              <BaseSelect 
+                v-model="reminder"
+                label="AVISO PREVIO"
+                :options="reminderOptions"
+              />
+            </div>
+
+            <!-- Auto-completar -->
+            <div class="form-group auto-complete-group">
+              <BaseSwitch 
+                v-model="autoComplete"
+                label="Auto-completar al Iniciar"
+              />
+            </div>
+
+            <!-- Submit -->
+            <div class="submit-wrapper">
+              <BaseButton 
+                type="submit"
+                variant="primary" 
+                class="save-btn" 
+                :disabled="loadingCreate"
+              >
+                <span v-if="loadingCreate" class="material-symbols-outlined icon-small spin">sync</span>
+                <span v-else class="material-symbols-outlined icon-small">check_circle</span> 
+                {{ loadingCreate ? 'Guardando...' : 'Guardar Rutina' }}
+              </BaseButton>
+            </div>
           </div>
-        </div>
-
-        <!-- Divisor -->
-        <div class="divider"></div>
-
-        <!-- Hora y Duración -->
-        <div class="form-row">
-          <BaseInput 
-            v-model="startTime"
-            label="HORA DE INICIO"
-            icon="schedule"
-          />
-          <BaseSelect 
-            v-model="duration"
-            label="DURACIÓN"
-            :options="durationOptions"
-          />
-        </div>
-
-        <!-- Días de la semana -->
-        <div class="form-group">
-          <label class="group-label">DÍAS DE LA SEMANA</label>
-          <div class="days-row">
-            <button
-              v-for="day in weekDays"
-              :key="day.id"
-              class="day-btn"
-              :class="{ 'is-active': selectedDays.includes(day.id) }"
-              @click="toggleDay(day.id)"
-            >
-              {{ day.label }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Divisor -->
-        <div class="divider"></div>
-
-        <!-- Aviso Previo -->
-        <div class="form-group half-width">
-          <BaseSelect 
-            v-model="reminder"
-            label="AVISO PREVIO"
-            :options="reminderOptions"
-          />
-        </div>
-
-        <!-- Auto-completar -->
-        <div class="form-group auto-complete-group">
-          <BaseSwitch 
-            v-model="autoComplete"
-            label="Auto-completar al Iniciar"
-          />
-        </div>
-
-        <!-- Submit -->
-        <div class="submit-wrapper">
-          <BaseButton 
-            variant="primary" 
-            class="save-btn" 
-            @click="handleSave"
-            :disabled="loadingCreate"
-          >
-            <span v-if="loadingCreate" class="material-symbols-outlined icon-small spin">sync</span>
-            <span v-else class="material-symbols-outlined icon-small">check_circle</span> 
-            {{ loadingCreate ? 'Guardando...' : 'Guardar Rutina' }}
-          </BaseButton>
-        </div>
-      </BaseCard>
+        </BaseCard>
+      </form>
     </div>
   </div>
 </template>
@@ -246,13 +267,13 @@ onMounted(async () => {
 .form-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: 1.5rem; /* Reduced gap between blocks to balance spacing */
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: 0.5rem; /* Tighter gap between label and input */
 }
 
 .half-width {
@@ -265,7 +286,7 @@ onMounted(async () => {
   color: var(--text-gray);
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: var(--space-2);
+  margin-bottom: 0; /* Let form-group gap handle it */
 }
 
 .loading-text {
@@ -372,6 +393,32 @@ onMounted(async () => {
 .auto-complete-group {
   margin-top: var(--space-2);
   max-width: 50%;
+}
+
+.submit-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 1rem;
+  font-size: 1rem;
+  border-radius: var(--radius-md);
+  margin-top: var(--space-4);
+}
+
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+
+  .days-selector {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .day-btn {
+    width: 36px;
+    height: 36px;
+  }
 }
 
 .submit-wrapper {

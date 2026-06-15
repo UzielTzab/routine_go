@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits, ref, computed } from 'vue'
 
-defineProps({
+const props = defineProps({
   modelValue: {
     type: [String, Number],
     default: ''
@@ -29,6 +29,28 @@ defineProps({
 })
 
 defineEmits(['update:modelValue'])
+
+const isPasswordVisible = ref(false)
+
+const inputType = computed(() => {
+  if (props.type === 'password') {
+    return isPasswordVisible.value ? 'text' : 'password'
+  }
+  return props.type
+})
+
+const currentIcon = computed(() => {
+  if (props.type === 'password') {
+    return isPasswordVisible.value ? 'visibility' : 'visibility_off'
+  }
+  return props.icon
+})
+
+const togglePasswordVisibility = () => {
+  if (props.type === 'password') {
+    isPasswordVisible.value = !isPasswordVisible.value
+  }
+}
 </script>
 
 <template>
@@ -36,13 +58,21 @@ defineEmits(['update:modelValue'])
     <label v-if="label" class="input-label">{{ label }}</label>
     <div class="input-container" :class="{ 'has-error': error }">
       <input 
-        :type="type"
+        :type="inputType"
         :value="modelValue"
         :placeholder="placeholder"
         @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
         class="base-input"
+        :class="{ 'has-icon': currentIcon }"
       />
-      <span v-if="icon" class="material-symbols-outlined input-icon">{{ icon }}</span>
+      <span 
+        v-if="currentIcon" 
+        class="material-symbols-outlined input-icon"
+        :class="{ 'clickable-icon': props.type === 'password' }"
+        @click="togglePasswordVisibility"
+      >
+        {{ currentIcon }}
+      </span>
     </div>
     <span v-if="error" class="error-message">{{ error }}</span>
   </div>
@@ -82,6 +112,15 @@ defineEmits(['update:modelValue'])
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.base-input.has-icon {
+  padding-right: 2.5rem; /* Make room for the icon */
+}
+
+.base-input::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1; /* Firefox sets opacity<1 by default */
+}
+
 .base-input:focus {
   outline: none;
   border-color: var(--color-primary);
@@ -92,7 +131,16 @@ defineEmits(['update:modelValue'])
   position: absolute;
   right: 1rem;
   color: var(--text-gray);
-  pointer-events: none;
+  user-select: none;
+}
+
+.clickable-icon {
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.clickable-icon:hover {
+  color: var(--text-primary);
 }
 
 .has-error .base-input {
