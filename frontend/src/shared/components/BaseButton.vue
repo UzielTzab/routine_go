@@ -14,6 +14,8 @@ defineProps({
     default: false
   }
 })
+
+defineEmits(['click'])
 </script>
 
 <template>

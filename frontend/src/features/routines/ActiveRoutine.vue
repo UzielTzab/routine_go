@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import BaseCard from '../../shared/components/BaseCard.vue'
 import BaseButton from '../../shared/components/BaseButton.vue'
+import BaseModal from '../../shared/components/BaseModal.vue'
 import { useScheduleStore } from '../../features/schedule/stores/useScheduleStore'
 import { useRoutineStore } from '../../features/routines/stores/useRoutineStore'
 
@@ -82,18 +83,89 @@ const displayTime = computed(() => {
   return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
 })
 
-const handleComplete = async () => {
-  if (activeItem.value) {
-    await scheduleStore.completeExecution(activeItem.value.id)
-    router.push('/')
-  }
+const formatTime = (isoString: string) => {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-const handleSkip = async () => {
+const upcomingRoutines = computed(() => {
+  return todaySchedule.value.filter((item: any) => {
+    const s = item.status?.toLowerCase() || ''
+    if (s === 'completed' || s === 'omitted' || s === 'in-progress' || s === 'in_progress') return false
+    
+    if (item.scheduled_end) {
+      const end = new Date(item.scheduled_end).getTime()
+      if (Date.now() > end) return false // hide expired
+    }
+    return true
+  }).sort((a: any, b: any) => {
+    const timeA = new Date(a.scheduled_start || 0).getTime()
+    const timeB = new Date(b.scheduled_start || 0).getTime()
+    return timeA - timeB
+  })
+})
+
+const handleStartClick = (item: any) => {
   if (activeItem.value) {
-    await scheduleStore.skipExecution(activeItem.value.id)
-    router.push('/')
+    alert('Ya tienes una rutina en progreso.')
+    return
   }
+  
+  if (item.scheduled_start) {
+    const startTime = new Date(item.scheduled_start).getTime()
+    if (Date.now() < startTime - (5 * 60 * 1000)) {
+      selectedItem.value = item
+      openModal('startEarly')
+      return
+    }
+  }
+  
+  startExecution(item)
+}
+
+const startExecution = async (item: any) => {
+  await scheduleStore.startExecution(item.id)
+  // Al iniciar, tenemos que refrescar la vista.
+  // ActiveRoutine hace fetchToday en onMounted, pero podemos recargar manualmente:
+  window.location.reload()
+}
+
+const isModalOpen = ref(false)
+const selectedAction = ref<string>('')
+const selectedItem = ref<any>(null)
+
+const actionTitleMap: Record<string, string> = {
+  complete: 'Completar Rutina',
+  skip: 'Omitir Rutina',
+  startEarly: 'Iniciar Anticipadamente'
+}
+
+const openModal = (action: string) => {
+  selectedAction.value = action
+  isModalOpen.value = true
+}
+
+const closeModal = () => {
+  isModalOpen.value = false
+  selectedAction.value = ''
+  selectedItem.value = null
+}
+
+const confirmAction = async () => {
+  if (selectedAction.value === 'startEarly' && selectedItem.value) {
+    await startExecution(selectedItem.value)
+  } else if (activeItem.value) {
+    if (selectedAction.value === 'complete') {
+      await scheduleStore.completeExecution(activeItem.value.id)
+      router.push('/')
+    } else if (selectedAction.value === 'skip') {
+      await scheduleStore.skipExecution(activeItem.value.id)
+      router.push('/')
+    }
+  }
+  
+  closeModal()
 }
 </script>
 
@@ -135,26 +207,72 @@ const handleSkip = async () => {
         </BaseCard>
 
         <div class="action-buttons">
-          <BaseButton variant="ghost" class="side-btn" @click="() => alert('Pausar próximamente...')">
-            <span class="material-symbols-outlined">pause</span> Pausar
-          </BaseButton>
-          
-          <BaseButton variant="primary" class="main-btn" @click="handleComplete">
+          <BaseButton variant="primary" class="main-btn" @click="openModal('complete')">
             <span class="material-symbols-outlined">check_circle</span> Completar
           </BaseButton>
 
-          <BaseButton variant="ghost" class="side-btn" @click="handleSkip">
+          <BaseButton variant="ghost" class="side-btn" @click="openModal('skip')">
             Omitir <span class="material-symbols-outlined">skip_next</span>
           </BaseButton>
         </div>
       </div>
     </div>
     <div v-else class="routine-content empty-content">
+      <span class="material-symbols-outlined empty-icon">timer_off</span>
       <h1 class="routine-title">Ninguna Rutina Activa</h1>
-      <BaseButton variant="primary" class="main-btn" @click="router.push('/agenda')">
+      <p class="routine-subtitle">¡Pero puedes activarla desde tu agenda!</p>
+      
+      <div v-if="upcomingRoutines.length > 0" class="upcoming-list-container">
+        <h3 class="upcoming-title">Próximas rutinas:</h3>
+        <div class="upcoming-scroll">
+          <BaseCard 
+            v-for="item in upcomingRoutines" 
+            :key="item.id" 
+            class="upcoming-card"
+            padding="1rem"
+            @click="handleStartClick(item)"
+          >
+            <div class="upcoming-item-content">
+              <div class="upcoming-left">
+                 <img :src="getCategoryAppearance(getCategoryName(item.routine?.category)).icon" class="upcoming-icon" />
+                 <div class="upcoming-text">
+                   <span class="upcoming-item-title">{{ item.routine?.title }}</span>
+                   <span class="upcoming-item-time">{{ formatTime(item.scheduled_start) }}</span>
+                 </div>
+              </div>
+              <span class="material-symbols-outlined play-icon">play_circle</span>
+            </div>
+          </BaseCard>
+        </div>
+      </div>
+      
+      <BaseButton v-else variant="primary" class="main-btn mt-6" @click="router.push('/agenda')">
         Ir a Agenda
       </BaseButton>
     </div>
+
+    <BaseModal 
+      v-model="isModalOpen" 
+      :title="actionTitleMap[selectedAction] || 'Confirmar Acción'"
+    >
+      <p v-if="selectedAction === 'complete'">
+        ¿Seguro que deseas marcar '{{ activeItem?.routine?.title }}' como completada? ¡Gran trabajo!
+      </p>
+      <p v-else-if="selectedAction === 'skip'">
+        ¿Seguro que deseas omitir el resto de la rutina '{{ activeItem?.routine?.title }}'?
+      </p>
+      <p v-else-if="selectedAction === 'startEarly'">
+        Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
+      </p>
+      <p v-else>
+        ¿Confirmar esta acción?
+      </p>
+
+      <template #footer>
+        <BaseButton variant="ghost" @click="closeModal">Cancelar</BaseButton>
+        <BaseButton variant="primary" @click="confirmAction">Confirmar</BaseButton>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
@@ -366,5 +484,103 @@ const handleSkip = async () => {
     text-align: center;
     justify-content: center;
   }
+}
+
+.empty-content {
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.empty-icon {
+  font-size: 6rem;
+  color: var(--text-gray);
+  opacity: 0.5;
+  margin-bottom: var(--space-2);
+}
+
+.upcoming-list-container {
+  width: 100%;
+  max-width: 400px;
+  margin-top: var(--space-6);
+  text-align: left;
+}
+
+.upcoming-title {
+  color: var(--text-gray);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: var(--space-3);
+  font-weight: 700;
+}
+
+.upcoming-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: var(--space-2);
+}
+
+.upcoming-card {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  background-color: var(--bg-card);
+}
+
+.upcoming-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-light);
+}
+
+.upcoming-item-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upcoming-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.upcoming-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.upcoming-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.upcoming-item-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.upcoming-item-time {
+  font-size: 0.85rem;
+  color: var(--text-gray);
+}
+
+.play-icon {
+  color: var(--color-primary);
+  font-size: 2rem;
+  opacity: 0.8;
+  transition: opacity 0.2s;
+}
+
+.upcoming-card:hover .play-icon {
+  opacity: 1;
+}
+
+.mt-6 {
+  margin-top: var(--space-6);
 }
 </style>

@@ -23,13 +23,24 @@ export const useScheduleStore = defineStore('schedule', () => {
     }
   }
 
+  const extractError = (err: any) => {
+    if (err.response?.data) {
+      if (Array.isArray(err.response.data) && err.response.data[0]) {
+        return err.response.data[0]
+      }
+      if (err.response.data.detail) return err.response.data.detail
+      if (typeof err.response.data === 'string') return err.response.data
+    }
+    return err.message
+  }
+
   const startExecution = async (uuid: string) => {
     try {
       await executionsApi.start(uuid)
       addToast('Rutina iniciada', 'success')
       await fetchToday()
     } catch (err: any) {
-      addToast(err.message || 'Error al iniciar', 'error')
+      addToast(extractError(err) || 'Error al iniciar', 'error')
     }
   }
 
@@ -39,7 +50,7 @@ export const useScheduleStore = defineStore('schedule', () => {
       addToast('Rutina completada con éxito', 'success')
       await fetchToday()
     } catch (err: any) {
-      addToast(err.message || 'Error al completar', 'error')
+      addToast(extractError(err) || 'Error al completar', 'error')
     }
   }
   
@@ -49,7 +60,7 @@ export const useScheduleStore = defineStore('schedule', () => {
       addToast('Rutina omitida', 'info')
       await fetchToday()
     } catch (err: any) {
-      addToast(err.message || 'Error al omitir', 'error')
+      addToast(extractError(err) || 'Error al omitir', 'error')
     }
   }
 
@@ -59,7 +70,7 @@ export const useScheduleStore = defineStore('schedule', () => {
       addToast('Rutina pospuesta 15 minutos', 'info')
       await fetchToday()
     } catch (err: any) {
-      addToast(err.message || 'Error al posponer', 'error')
+      addToast(extractError(err) || 'Error al posponer', 'error')
     }
   }
 

@@ -20,6 +20,13 @@ class ExecutionStateMachineService:
         cls._validate_not_terminal(execution)
         if execution.status not in ['PENDING', 'SNOOZED', 'NOTIFIED', 'EXPIRED']:
             raise ValidationError(f"Cannot start execution from status: {execution.status}")
+            
+        # Complete or expire any previously running routines to prevent deadlocks from yesterday
+        active_executions = RoutineExecution.objects.filter(status='IN_PROGRESS').exclude(id=execution.id)
+        for old_exec in active_executions:
+            # We automatically mark them as expired to free up the state machine
+            old_exec.status = 'EXPIRED'
+            old_exec.save()
 
         now = timezone.now()
         execution.status = 'IN_PROGRESS'

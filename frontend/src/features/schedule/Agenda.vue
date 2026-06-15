@@ -6,9 +6,11 @@ import BaseButton from '../../shared/components/BaseButton.vue'
 import BaseModal from '../../shared/components/BaseModal.vue'
 import { useScheduleStore } from './stores/useScheduleStore'
 import { useRoutineStore } from '../routines/stores/useRoutineStore'
+import { useToast } from '../../shared/composables/useToast'
 
 const scheduleStore = useScheduleStore()
 const routineStore = useRoutineStore()
+const { addToast } = useToast()
 const { todaySchedule, loading, error } = storeToRefs(scheduleStore)
 const { categories } = storeToRefs(routineStore)
 
@@ -19,7 +21,8 @@ const selectedAction = ref<string>('')
 const actionTitleMap: Record<string, string> = {
   complete: 'Completar Rutina',
   snooze: 'Posponer Rutina',
-  skip: 'Omitir Rutina'
+  skip: 'Omitir Rutina',
+  startEarly: 'Iniciar Anticipadamente'
 }
 
 const openModal = (item: any, action: string) => {
@@ -44,6 +47,8 @@ const confirmAction = () => {
     scheduleStore.snoozeExecution(id)
   } else if (selectedAction.value === 'skip') {
     scheduleStore.skipExecution(id)
+  } else if (selectedAction.value === 'startEarly') {
+    scheduleStore.startExecution(id)
   }
   
   closeModal()
@@ -58,6 +63,32 @@ const getComputedStatus = (item: any) => {
     if (Date.now() > end) return 'expired';
   }
   return s;
+}
+
+const handleStartClick = (item: any) => {
+  // 1. Validar que no haya otra rutina corriendo
+  const hasActiveRoutine = todaySchedule.value.some(r => {
+    const s = getComputedStatus(r)
+    return s === 'in-progress' || s === 'in_progress'
+  })
+  
+  if (hasActiveRoutine) {
+    addToast('Ya tienes una rutina en progreso. Complétala o páusala primero.', 'error')
+    return
+  }
+  
+  // 2. Validar si es muy temprano (más de 5 minutos antes)
+  if (item.scheduled_start) {
+    const startTime = new Date(item.scheduled_start).getTime();
+    // Si faltan más de 5 minutos para que inicie
+    if (Date.now() < startTime - (5 * 60 * 1000)) {
+      openModal(item, 'startEarly');
+      return;
+    }
+  }
+  
+  // 3. Iniciar normal
+  scheduleStore.startExecution(item.id);
 }
 
 const canSnooze = (item: any) => {
@@ -213,7 +244,7 @@ onMounted(async () => {
               </BaseButton>
               <BaseButton 
                 variant="primary" class="action-btn" v-else
-                @click="scheduleStore.startExecution(item.id)"
+                @click="handleStartClick(item)"
               >
                 Iniciar
               </BaseButton>
@@ -243,6 +274,9 @@ onMounted(async () => {
       </p>
       <p v-else-if="selectedAction === 'skip'">
         ¿Seguro que deseas omitir la rutina '{{ selectedItem?.routine?.title }}'?
+      </p>
+      <p v-else-if="selectedAction === 'startEarly'">
+        Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
       </p>
       <p v-else>
         ¿Confirmar esta acción?
