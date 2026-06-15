@@ -1,20 +1,42 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { storeToRefs } from 'pinia'
 import BaseCard from '../../shared/components/BaseCard.vue'
 import BaseButton from '../../shared/components/BaseButton.vue'
 import MetricCard from '../../shared/components/MetricCard.vue'
+import { useDashboardStore } from './stores/useDashboardStore'
 
-// Data based on the image using local icon paths
-const metrics = [
-  { category: 'hygiene', label: 'Hygiene', progress: 100, icon: '/images/icons/hygiene.png' },
-  { category: 'exercise', label: 'Exercise', progress: 0, icon: '/images/icons/excersice.png' },
-  { category: 'focus', label: 'Focus', progress: 60, icon: '/images/icons/focus.png' },
-  { category: 'nutrition', label: 'Nutrition', progress: 30, icon: '/images/icons/nutrition.png' },
-  { category: 'sleep', label: 'Sleep', progress: 85, icon: '/images/icons/sleep.png' },
-]
+const router = useRouter()
+const dashboardStore = useDashboardStore()
+const { dashboardData, loading } = storeToRefs(dashboardStore)
+
+onMounted(async () => {
+  await dashboardStore.fetchDashboard()
+})
+
+const getCategoryIcon = (categoryCode: string) => {
+  const code = (categoryCode || '').toLowerCase()
+  if (code.includes('hygiene')) return '/images/icons/hygiene.png'
+  if (code.includes('exercise')) return '/images/icons/excersice.png'
+  if (code.includes('focus') || code.includes('work') || code.includes('foco') || code.includes('trabajo')) return '/images/icons/focus.png'
+  if (code.includes('nutrition') || code.includes('health') || code.includes('nutrición')) return '/images/icons/nutrition.png'
+  if (code.includes('sleep') || code.includes('sueño')) return '/images/icons/sleep.png'
+  return '/images/icons/focus.png'
+}
+
+const formatTime = (isoString: string) => {
+  if (!isoString) return ''
+  const d = new Date(isoString)
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
 </script>
 
 <template>
-  <div class="dashboard-page">
+  <div class="dashboard-page" v-if="loading">
+    <p>Cargando panel...</p>
+  </div>
+  <div class="dashboard-page" v-else-if="dashboardData">
     <header class="page-header">
       <h1 class="greeting">Buenos días</h1>
       <p class="subtitle">Ready for peak performance today.</p>
@@ -31,58 +53,62 @@ const metrics = [
           </div>
           <div class="streak-body">
             <div class="streak-count">
-              <span class="number">5</span>
+              <span class="number">{{ dashboardData.current_streak }}</span>
               <span class="text">Days</span>
             </div>
             <div class="streak-bars">
-              <div class="bar active"></div>
-              <div class="bar active"></div>
-              <div class="bar active"></div>
-              <div class="bar active"></div>
-              <div class="bar active"></div>
-              <div class="bar inactive"></div>
-              <div class="bar inactive"></div>
+              <div v-for="i in 7" :key="i" class="bar" :class="{ 'active': i <= (dashboardData.current_streak % 7 || 7) && dashboardData.current_streak > 0, 'inactive': i > (dashboardData.current_streak % 7 || 7) || dashboardData.current_streak === 0 }"></div>
             </div>
           </div>
         </BaseCard>
 
         <!-- Active Routine -->
         <BaseCard class="active-routine-card" padding="0">
-          <div class="active-routine-content">
+          <div class="active-routine-content" v-if="dashboardData.active_routine">
             <div class="routine-info">
               <span class="badge">ACTIVE ROUTINE</span>
-              <h2 class="routine-title">Deep Work Session</h2>
+              <h2 class="routine-title">{{ dashboardData.active_routine.title }}</h2>
               <span class="routine-category">
-                 <img src="/images/icons/focus.png" class="inline-icon" alt="Focus"/> Focus
+                 <img :src="getCategoryIcon(dashboardData.active_routine.category_name)" class="inline-icon" alt="Category"/> {{ dashboardData.active_routine.category_name }}
               </span>
               
               <div class="routine-actions">
-                <BaseButton variant="primary" class="pause-btn">
-                  <span class="material-symbols-outlined">pause</span> Pause
+                <BaseButton variant="primary" class="pause-btn" @click="router.push('/active-routine')">
+                  <span class="material-symbols-outlined">timer</span> Ver Temporizador
                 </BaseButton>
               </div>
             </div>
             <div class="routine-timer">
               <div class="timer-circle">
-                <span class="time-left">25m</span>
+                <span class="time-left">{{ dashboardData.active_routine.duration_minutes }}m</span>
               </div>
               <img src="/images/icons/clock.png" alt="Clock" class="clock-illustration" />
             </div>
+          </div>
+          <div class="active-routine-content empty-active" v-else>
+             <div class="routine-info">
+               <h2 class="routine-title">Sin Rutina Activa</h2>
+               <p class="routine-category">Dirígete a tu agenda para comenzar tu día.</p>
+               <BaseButton variant="primary" class="pause-btn" @click="router.push('/agenda')">Ver Agenda</BaseButton>
+             </div>
           </div>
         </BaseCard>
       </div>
 
       <!-- Middle Row -->
       <BaseCard title="DAILY PROGRESS" class="metrics-card">
-        <div class="metrics-container">
+        <div class="metrics-container" v-if="dashboardData.daily_progress && dashboardData.daily_progress.length > 0">
           <MetricCard 
-            v-for="metric in metrics" 
-            :key="metric.category"
-            :category="metric.category"
-            :label="metric.label"
-            :progress="metric.progress"
-            :icon="metric.icon"
+            v-for="metric in dashboardData.daily_progress" 
+            :key="metric.category_code"
+            :category="metric.category_code"
+            :label="metric.category_name"
+            :progress="metric.percentage"
+            :icon="getCategoryIcon(metric.category_name)"
           />
+        </div>
+        <div v-else class="metrics-container">
+          <p style="color: var(--text-gray); font-size: 0.9rem;">No hay progreso aún. ¡Inicia una rutina!</p>
         </div>
       </BaseCard>
 
@@ -90,14 +116,17 @@ const metrics = [
       <div class="bottom-row">
         <!-- Up Next -->
         <BaseCard title="UP NEXT" class="up-next-card">
-          <div class="next-item">
-            <div class="item-icon-wrapper">
-              <img src="/images/icons/nutrition.png" alt="Nutrition" class="item-img-icon" />
+          <div class="next-item" v-if="dashboardData.up_next">
+            <div class="item-icon-wrapper" :style="{ backgroundColor: dashboardData.up_next.category_color }">
+              <img :src="getCategoryIcon(dashboardData.up_next.category_color)" alt="Category" class="item-img-icon" />
             </div>
             <div class="item-details">
-              <h4 class="item-title">Healthy Lunch</h4>
-              <span class="item-time">13:30 - Nutrition</span>
+              <h4 class="item-title">{{ dashboardData.up_next.title }}</h4>
+              <span class="item-time">{{ formatTime(dashboardData.up_next.scheduled_start) }}</span>
             </div>
+          </div>
+          <div v-else class="next-item">
+            <p style="color: var(--text-gray);">No hay más rutinas programadas para hoy.</p>
           </div>
         </BaseCard>
 
@@ -105,17 +134,17 @@ const metrics = [
         <BaseCard class="compliance-card">
           <div class="compliance-header">
             <span class="card-label">WEEKLY COMPLIANCE</span>
-            <span class="avg-label">76% AVG</span>
+            <span class="avg-label">{{ dashboardData.weekly_compliance.average }}% AVG</span>
           </div>
           <div class="chart-placeholder">
             <div class="chart-bars">
-              <div class="chart-bar" style="height: 30%"><span>M</span></div>
-              <div class="chart-bar" style="height: 40%"><span>T</span></div>
-              <div class="chart-bar" style="height: 20%"><span>W</span></div>
-              <div class="chart-bar" style="height: 45%"><span>T</span></div>
-              <div class="chart-bar active" style="height: 85%"><span>F</span></div>
-              <div class="chart-bar" style="height: 10%"><span>S</span></div>
-              <div class="chart-bar" style="height: 5%"><span>S</span></div>
+              <div class="chart-bar" 
+                   v-for="(day, index) in dashboardData.weekly_compliance.days" 
+                   :key="index"
+                   :class="{ 'active': day.is_today }"
+                   :style="{ height: Math.max(day.progress, 5) + '%' }">
+                <span>{{ day.day }}</span>
+              </div>
             </div>
           </div>
         </BaseCard>

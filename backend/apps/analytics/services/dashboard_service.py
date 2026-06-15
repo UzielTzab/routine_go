@@ -113,9 +113,90 @@ class DashboardService:
         }
 
     @staticmethod
+    def get_weekly_compliance(user) -> dict:
+        """
+        Calculates compliance for the last 7 days (including today).
+        """
+        today = timezone.now().date()
+        start_date = today - timedelta(days=6)
+        
+        days_map = {0: 'M', 1: 'T', 2: 'W', 3: 'T', 4: 'F', 5: 'S', 6: 'S'}
+        
+        executions = RoutineExecution.objects.filter(
+            user=user,
+            scheduled_start__date__gte=start_date,
+            scheduled_start__date__lte=today
+        ).exclude(status__in=['SNOOZED', 'NOTIFIED', 'PENDING']) # Only count resolved items for past days
+        
+        # We need a structure per day
+        days_data = []
+        total_percentage = 0
+        days_counted = 0
+        
+        for i in range(7):
+            current = start_date + timedelta(days=i)
+            day_execs = executions.filter(scheduled_start__date=current)
+            total = day_execs.count()
+            
+            if current == today:
+                # For today, we consider ALL scheduled routines for compliance calculation
+                # including pending ones.
+                total = RoutineExecution.objects.filter(
+                    user=user,
+                    scheduled_start__date=today
+                ).count()
+                
+            completed = day_execs.filter(status='COMPLETED').count()
+            
+            progress = int((completed / total * 100)) if total > 0 else 0
+            
+            # If it's a past day and there were no routines, progress is 0 but maybe we don't count it towards AVG?
+            # Let's count it.
+            if total > 0 or current == today:
+                total_percentage += progress
+                days_counted += 1
+                
+            days_data.append({
+                'day': days_map[current.weekday()],
+                'progress': progress,
+                'is_today': current == today
+            })
+            
+        avg = int(total_percentage / days_counted) if days_counted > 0 else 0
+        
+        return {
+            'average': avg,
+            'days': days_data
+        }
+
+    @staticmethod
+    def get_active_routine(user) -> dict:
+        """
+        Returns the currently IN_PROGRESS routine if any.
+        """
+        active = RoutineExecution.objects.filter(
+            user=user,
+            status='IN_PROGRESS'
+        ).first()
+        
+        if not active:
+            return None
+            
+        duration = active.duration_minutes if active.duration_minutes else active.routine.default_duration_minutes
+            
+        return {
+            'id': str(active.id),
+            'title': active.routine.title,
+            'category_name': active.routine.category.name,
+            'duration_minutes': duration
+        }
+
+    @staticmethod
     def get_dashboard_data(user) -> dict:
         return {
             'current_streak': DashboardService.get_current_streak(user),
             'daily_progress': DashboardService.get_daily_progress(user),
-            'up_next': DashboardService.get_up_next(user)
+            'up_next': DashboardService.get_up_next(user),
+            'weekly_compliance': DashboardService.get_weekly_compliance(user),
+            'active_routine': DashboardService.get_active_routine(user)
         }
