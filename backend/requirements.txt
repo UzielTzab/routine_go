@@ -7,3 +7,4 @@ celery==5.3.6
 redis==5.0.3
 django-celery-beat==2.6.0
 gunicorn==21.2.0
+djangorestframework-simplejwt==5.3.1

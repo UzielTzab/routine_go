@@ -1,40 +1,46 @@
 :root {
   --font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  --color-primary: #635bff;
-  --color-primary-soft: #eef0ff;
-  --color-primary-strong: #4338ca;
+  /* Colores proporcionados por el diseño final */
+  --sidebar-bg: #3A3B51;
+  --color-primary: #B8B7FF;
+  --color-primary-deep: #00000033; /* 20% opacity black */
+  --color-white: #FFFFFF;
+  --bg-app: #E9E9FB;
+  
+  --color-hygiene: #0EA5E9;
+  --color-exercise: #10B981;
+  --color-focus: #6462EC;
+  --color-nutrition: #F59E0B;
+  --color-sleep: #6576A6;
+  
+  --status-in-progress: #5882F8;
+  --status-expired: #F85D58;
+  
+  --text-gray: #717171;
+  --color-disable: #E4E3E3;
+  --text-primary: #414755;
+  
+  --border-color: #E5E7EB;
+  --bg-status-info: #E8E8FD;
+  --bg-status-danger: #FFEAE9;
+  --bg-status-in-progress: #E8EEFF;
+  --border-container: #E5E5E7;
 
-  --color-hygiene: #3b82f6;
-  --color-hygiene-soft: #dbeafe;
-  --color-exercise: #22c55e;
-  --color-exercise-soft: #dcfce7;
-  --color-focus: #8b5cf6;
-  --color-focus-soft: #ede9fe;
-  --color-nutrition: #f97316;
-  --color-nutrition-soft: #ffedd5;
-  --color-sleep: #6366f1;
-  --color-sleep-soft: #e0e7ff;
+  /* Surfaces & Backgrounds */
+  --background-app: var(--bg-app);
+  --background-elevated: var(--color-white);
+  --surface-card: var(--color-white);
 
-  --color-success: #22c55e;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-info: #0ea5e9;
+  /* Texto */
+  --text-secondary: var(--text-gray);
+  --text-inverse: var(--color-white);
 
-  --background-app: #f8fafc;
-  --background-elevated: #ffffff;
-  --surface-card: #ffffff;
-  --surface-muted: #f1f5f9;
-  --surface-soft: #f8fafc;
+  /* Bordes */
+  --border-soft: var(--border-color);
+  --border-strong: var(--border-container);
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --text-inverse: #ffffff;
-
-  --border-soft: #e2e8f0;
-  --border-strong: #cbd5e1;
-
+  /* Border Radius */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
@@ -42,10 +48,11 @@
   --radius-2xl: 1.5rem;
   --radius-full: 999px;
 
-  --shadow-soft: 0 8px 20px rgba(15, 23, 42, 0.04);
-  --shadow-card: 0 12px 30px rgba(15, 23, 42, 0.06);
-  --shadow-floating: 0 20px 45px rgba(15, 23, 42, 0.10);
+  /* Sombras basadas en estilo de tarjeta de Figma */
+  --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 8px 30px rgba(0, 0, 0, 0.04);
 
+  /* Espaciados */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -56,10 +63,11 @@
   --space-10: 2.5rem;
   --space-12: 3rem;
 
-  --sidebar-width: 17rem;
-  --bottom-nav-height: 4.5rem;
+  /* Layout dimensions */
+  --sidebar-width: 16rem;
   --topbar-height: 4.5rem;
 
+  /* Z-index */
   --z-dropdown: 20;
   --z-sticky: 30;
   --z-modal: 50;
