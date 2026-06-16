@@ -97,6 +97,7 @@ const handleSave = async () => {
     schedule_rules: [{
       days_of_week: selectedDays.value.map(d => dayMap[d]).join(','),
       start_time: parseTime(startTime.value),
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       reminder_minutes: parseInt(reminder.value.split(' ')[0]) || 10,
       auto_complete: autoComplete.value
     }]
