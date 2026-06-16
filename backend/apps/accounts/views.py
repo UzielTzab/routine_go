@@ -13,8 +13,8 @@ def _set_cookie(response, key, value, lifetime_property):
         value=value,
         max_age=int(max_age),
         httponly=True,
-        samesite='Lax',
-        secure=settings.AUTH_COOKIE_SECURE
+        samesite='None',
+        secure=True
     )
 
 class CookieTokenObtainPairView(TokenObtainPairView):
@@ -66,8 +66,8 @@ class LogoutView(APIView):
 
     def post(self, request, *args, **kwargs):
         response = Response({"detail": "Successfully logged out."}, status=status.HTTP_200_OK)
-        response.delete_cookie('access_token', samesite='Lax')
-        response.delete_cookie('refresh_token', samesite='Lax')
+        response.delete_cookie('access_token', samesite='None')
+        response.delete_cookie('refresh_token', samesite='None')
         return response
 
 from rest_framework_simplejwt.tokens import RefreshToken
