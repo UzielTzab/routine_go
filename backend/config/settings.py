@@ -32,7 +32,10 @@ SECRET_KEY = env('SECRET_KEY', default='django-insecure-bwlltw1-$m$eei-p9qic)!&t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS_RAW = env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_RAW]
+if '*' in ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -104,9 +107,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[
-    "http://localhost:5173",
-])
+CORS_RAW = env.list('CORS_ALLOWED_ORIGINS', default=["http://localhost:5173"])
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in CORS_RAW]
+if '*' in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOW_ALL_ORIGINS = True
+
 
 
 # Internationalization
