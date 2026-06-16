@@ -63,7 +63,7 @@ services:
     expose:
       - "8000"
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - POSTGRES_HOST=db
       - REDIS_URL=redis://redis:6379/0
@@ -86,7 +86,7 @@ services:
     volumes:
       - ./backend:/app
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - POSTGRES_HOST=db
       - REDIS_URL=redis://redis:6379/0
@@ -106,7 +106,7 @@ services:
     volumes:
       - ./backend:/app
     env_file:
-      - ./backend/.env
+      - .env
     environment:
       - POSTGRES_HOST=db
       - REDIS_URL=redis://redis:6379/0
