@@ -39,6 +39,14 @@ export const useRoutineStore = defineStore('routine', () => {
     }
   }
 
+  const deleteRoutine = async (id: string) => {
+    try {
+      await routinesApi.deleteTemplate(id)
+    } catch (err: any) {
+      throw err
+    }
+  }
+
   return {
     categories,
     loadingCategories,
@@ -47,6 +55,7 @@ export const useRoutineStore = defineStore('routine', () => {
     errorCreate,
     createSuccess,
     fetchCategories,
-    createRoutine
+    createRoutine,
+    deleteRoutine
   }
 })

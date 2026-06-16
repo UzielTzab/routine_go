@@ -22,7 +22,8 @@ const actionTitleMap: Record<string, string> = {
   complete: 'Completar Rutina',
   snooze: 'Posponer Rutina',
   skip: 'Omitir Rutina',
-  startEarly: 'Iniciar Anticipadamente'
+  startEarly: 'Iniciar Anticipadamente',
+  delete: 'Eliminar Rutina'
 }
 
 const openModal = (item: any, action: string) => {
@@ -37,7 +38,7 @@ const closeModal = () => {
   selectedAction.value = ''
 }
 
-const confirmAction = () => {
+const confirmAction = async () => {
   if (!selectedItem.value) return
   
   const id = selectedItem.value.id
@@ -49,6 +50,11 @@ const confirmAction = () => {
     scheduleStore.skipExecution(id)
   } else if (selectedAction.value === 'startEarly') {
     scheduleStore.startExecution(id)
+  } else if (selectedAction.value === 'delete') {
+    if (selectedItem.value.routine?.id) {
+      await routineStore.deleteRoutine(selectedItem.value.routine.id)
+      scheduleStore.fetchToday()
+    }
   }
   
   closeModal()
@@ -248,6 +254,9 @@ onMounted(async () => {
               >
                 Iniciar
               </BaseButton>
+              <button class="icon-btn delete-btn" @click.stop="openModal(item, 'delete')">
+                <span class="material-symbols-outlined">delete</span>
+              </button>
             </div>
             <div class="task-actions" v-else>
                <span class="status-text-completed" v-if="getComputedStatus(item) === 'completed'">
@@ -256,6 +265,9 @@ onMounted(async () => {
                <span class="status-text-omitted" v-else-if="getComputedStatus(item) === 'omitted'">
                   <span class="material-symbols-outlined icon-small">cancel</span> Omitida
                </span>
+               <button class="icon-btn delete-btn" @click.stop="openModal(item, 'delete')">
+                 <span class="material-symbols-outlined">delete</span>
+               </button>
             </div>
           </div>
         </BaseCard>
@@ -267,20 +279,28 @@ onMounted(async () => {
       :title="actionTitleMap[selectedAction] || 'Confirmar Acción'"
     >
       <p v-if="selectedAction === 'complete'">
-        ¿Seguro que deseas marcar '{{ selectedItem?.routine?.title }}' como completada?
-      </p>
-      <p v-else-if="selectedAction === 'snooze'">
-        ¿Seguro que deseas posponer la rutina '{{ selectedItem?.routine?.title }}' por 15 minutos extras?
-      </p>
-      <p v-else-if="selectedAction === 'skip'">
-        ¿Seguro que deseas omitir la rutina '{{ selectedItem?.routine?.title }}'?
-      </p>
-      <p v-else-if="selectedAction === 'startEarly'">
-        Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
-      </p>
-      <p v-else>
-        ¿Confirmar esta acción?
-      </p>
+      <div class="modal-content-inner">
+        <div v-if="selectedAction === 'delete'" class="delete-warning">
+          <span class="material-symbols-outlined warning-icon">warning</span>
+          <p>¿Estás seguro que deseas eliminar permanentemente la rutina <strong>{{ selectedItem?.routine?.title }}</strong>?</p>
+          <p class="warning-text">Esto también eliminará todas sus ejecuciones programadas y no se puede deshacer.</p>
+        </div>
+        <p v-else-if="selectedAction === 'complete'">
+          ¿Seguro que deseas marcar '{{ selectedItem?.routine?.title }}' como completada?
+        </p>
+        <p v-else-if="selectedAction === 'snooze'">
+          ¿Seguro que deseas posponer la rutina '{{ selectedItem?.routine?.title }}' por 15 minutos extras?
+        </p>
+        <p v-else-if="selectedAction === 'startEarly'">
+          Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
+        </p>
+        <p v-else-if="selectedAction === 'skip'">
+          ¿Seguro que deseas omitir la rutina '{{ selectedItem?.routine?.title }}'?
+        </p>
+        <p v-else>
+          ¿Confirmar esta acción?
+        </p>
+      </div>
 
       <template #footer>
         <BaseButton variant="ghost" @click="closeModal">Cancelar</BaseButton>
@@ -452,6 +472,28 @@ onMounted(async () => {
   gap: var(--space-2);
 }
 
+.modal-content-inner {
+  text-align: center;
+  margin: var(--space-4) 0;
+}
+
+.delete-warning {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.warning-icon {
+  font-size: 3rem;
+  color: var(--status-expired);
+}
+
+.warning-text {
+  font-size: 0.85rem;
+  color: var(--status-expired);
+}
+
 .meta-icon {
   width: 16px;
   height: 16px;
@@ -528,7 +570,15 @@ onMounted(async () => {
     width: 100%;
   }
 
+  .task-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
   .task-actions {
+    width: 100%;
+    justify-content: flex-end;
     flex-wrap: wrap;
   }
   
@@ -546,5 +596,22 @@ onMounted(async () => {
   color: var(--text-gray);
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.icon-btn.delete-btn {
+  background: none;
+  border: none;
+  color: var(--status-expired);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: var(--space-2);
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.icon-btn.delete-btn:hover {
+  background-color: #fee2e2;
 }
 </style>
