@@ -50,18 +50,7 @@ class DashboardService:
         """
         Retorna el progreso diario por categoría.
         """
-        # Aseguramos que la agenda esté generada
-        get_today_agenda(user)
-        
-        today = timezone.now().date()
-        today_start = timezone.make_aware(timezone.datetime.combine(today, timezone.datetime.min.time()))
-        today_end = today_start + timedelta(days=1)
-        
-        executions = RoutineExecution.objects.filter(
-            user=user,
-            scheduled_start__gte=today_start,
-            scheduled_start__lt=today_end
-        )
+        executions = get_today_agenda(user)
         
         categories = Category.objects.all()
         progress = []
@@ -89,16 +78,9 @@ class DashboardService:
         """
         Retorna la próxima rutina a ejecutar hoy.
         """
-        get_today_agenda(user)
+        executions = get_today_agenda(user)
         
-        today = timezone.now().date()
-        today_start = timezone.make_aware(timezone.datetime.combine(today, timezone.datetime.min.time()))
-        today_end = today_start + timedelta(days=1)
-        
-        next_execution = RoutineExecution.objects.filter(
-            user=user,
-            scheduled_start__gte=today_start,
-            scheduled_start__lt=today_end,
+        next_execution = executions.filter(
             status__in=['PENDING', 'SNOOZED']
         ).order_by('scheduled_start').first()
         
