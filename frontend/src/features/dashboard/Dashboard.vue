@@ -123,6 +123,9 @@ const displayMetrics = computed(() => {
                <p class="routine-category">Dirígete a tu agenda para comenzar tu día.</p>
                <BaseButton variant="primary" class="pause-btn" @click="router.push('/agenda')">Ver Agenda</BaseButton>
              </div>
+             <div class="routine-timer empty-timer">
+               <img src="/images/icons/clock.png" alt="Clock" class="clock-illustration" style="opacity: 0.5;" />
+             </div>
           </div>
         </BaseCard>
       </div>

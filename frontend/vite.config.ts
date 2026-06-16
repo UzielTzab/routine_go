@@ -17,8 +17,8 @@ export default defineConfig({
         name: 'Uziel OS',
         short_name: 'UzielOS',
         description: 'Gestor personal de rutinas y alto rendimiento',
-        theme_color: '#B8B7FF',
-        background_color: '#E9E9FB',
+        theme_color: '#F8F9FD',
+        background_color: '#F8F9FD',
         display: 'standalone',
         icons: [
           {
