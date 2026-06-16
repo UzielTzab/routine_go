@@ -47,6 +47,14 @@ export const useRoutineStore = defineStore('routine', () => {
     }
   }
 
+  const updateRoutine = async (id: string, routineData: any) => {
+    try {
+      await routinesApi.updateTemplate(id, routineData)
+    } catch (err: any) {
+      throw err
+    }
+  }
+
   return {
     categories,
     loadingCategories,
@@ -56,6 +64,7 @@ export const useRoutineStore = defineStore('routine', () => {
     createSuccess,
     fetchCategories,
     createRoutine,
-    deleteRoutine
+    deleteRoutine,
+    updateRoutine
   }
 })

@@ -18,8 +18,8 @@ const selectedCategoryId = ref<number | string | null>(null)
 const startTime = ref('08:00 AM')
 const endTime = ref('10:00 AM')
 const selectedDays = ref(['J'])
-const reminder = ref('10 minutos antes')
-const autoComplete = ref(false)
+const reminder = ref('5 minutos antes')
+const autoComplete = ref(true)
 
 const reminderOptions = [
   { value: '5 minutos antes', label: '5 minutos antes' },

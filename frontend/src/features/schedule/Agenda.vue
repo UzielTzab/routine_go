@@ -4,6 +4,7 @@ import { storeToRefs } from 'pinia'
 import BaseCard from '../../shared/components/BaseCard.vue'
 import BaseButton from '../../shared/components/BaseButton.vue'
 import BaseModal from '../../shared/components/BaseModal.vue'
+import EditRoutineModal from '../routines/EditRoutineModal.vue'
 import { useScheduleStore } from './stores/useScheduleStore'
 import { useRoutineStore } from '../routines/stores/useRoutineStore'
 import { useToast } from '../../shared/composables/useToast'
@@ -18,6 +19,9 @@ const isModalOpen = ref(false)
 const selectedItem = ref<any>(null)
 const selectedAction = ref<string>('')
 
+const isEditModalOpen = ref(false)
+const editingRoutine = ref<any>(null)
+
 const actionTitleMap: Record<string, string> = {
   complete: 'Completar Rutina',
   snooze: 'Posponer Rutina',
@@ -30,6 +34,11 @@ const openModal = (item: any, action: string) => {
   selectedItem.value = item
   selectedAction.value = action
   isModalOpen.value = true
+}
+
+const openEditModal = (item: any) => {
+  editingRoutine.value = item.routine
+  isEditModalOpen.value = true
 }
 
 const closeModal = () => {
@@ -254,6 +263,9 @@ onMounted(async () => {
               >
                 Iniciar
               </BaseButton>
+              <button class="icon-btn edit-btn" @click.stop="openEditModal(item)">
+                <span class="material-symbols-outlined">edit</span>
+              </button>
               <button class="icon-btn delete-btn" @click.stop="openModal(item, 'delete')">
                 <span class="material-symbols-outlined">delete</span>
               </button>
@@ -265,6 +277,9 @@ onMounted(async () => {
                <span class="status-text-omitted" v-else-if="getComputedStatus(item) === 'omitted'">
                   <span class="material-symbols-outlined icon-small">cancel</span> Omitida
                </span>
+               <button class="icon-btn edit-btn" @click.stop="openEditModal(item)">
+                 <span class="material-symbols-outlined">edit</span>
+               </button>
                <button class="icon-btn delete-btn" @click.stop="openModal(item, 'delete')">
                  <span class="material-symbols-outlined">delete</span>
                </button>
@@ -273,6 +288,13 @@ onMounted(async () => {
         </BaseCard>
       </div>
     </div>
+
+    <EditRoutineModal 
+      :is-open="isEditModalOpen" 
+      :routine="editingRoutine" 
+      @close="isEditModalOpen = false"
+      @saved="scheduleStore.fetchToday()"
+    />
 
     <BaseModal 
       v-model="isModalOpen" 
