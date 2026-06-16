@@ -103,7 +103,7 @@ const handleSave = async () => {
 </script>
 
 <template>
-  <BaseModal :is-open="isOpen" title="Editar Rutina" @close="$emit('close')">
+  <BaseModal :modelValue="isOpen" title="Editar Rutina" @update:modelValue="(val) => { if(!val) $emit('close') }">
     <div class="edit-form">
       <div class="form-group">
         <label>Nombre de la rutina</label>
