@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import BaseCard from '../../shared/components/BaseCard.vue'
@@ -17,11 +17,11 @@ onMounted(async () => {
 
 const getCategoryIcon = (categoryCode: string) => {
   const code = (categoryCode || '').toLowerCase()
-  if (code.includes('hygiene')) return '/images/icons/hygiene.png'
-  if (code.includes('exercise')) return '/images/icons/excersice.png'
+  if (code.includes('hygiene') || code.includes('higiene')) return '/images/icons/hygiene.png'
+  if (code.includes('exercise') || code.includes('ejercicio')) return '/images/icons/excersice.png'
   if (code.includes('focus') || code.includes('work') || code.includes('foco') || code.includes('trabajo')) return '/images/icons/focus.png'
-  if (code.includes('nutrition') || code.includes('health') || code.includes('nutrición')) return '/images/icons/nutrition.png'
-  if (code.includes('sleep') || code.includes('sueño')) return '/images/icons/sleep.png'
+  if (code.includes('nutrition') || code.includes('health') || code.includes('nutrición') || code.includes('nutricion') || code.includes('alimentación') || code.includes('alimentacion')) return '/images/icons/nutrition.png'
+  if (code.includes('sleep') || code.includes('sueño') || code.includes('descanso')) return '/images/icons/sleep.png'
   return '/images/icons/focus.png'
 }
 
@@ -30,6 +30,34 @@ const formatTime = (isoString: string) => {
   const d = new Date(isoString)
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
+
+const displayMetrics = computed(() => {
+  const baseCategories = [
+    { code: 'hygiene', name: 'Higiene' },
+    { code: 'exercise', name: 'Ejercicio' },
+    { code: 'focus', name: 'Foco' },
+    { code: 'nutrition', name: 'Alimentación' },
+    { code: 'sleep', name: 'Descanso' }
+  ]
+  
+  const backendMetrics = dashboardData.value?.daily_progress || []
+  
+  return baseCategories.map(base => {
+    // Try to find a match from backend by name or code
+    const found = backendMetrics.find((m: any) => 
+      (m.category_name || '').toLowerCase().includes(base.name.toLowerCase()) || 
+      (m.category_code || '').toLowerCase().includes(base.code)
+    )
+    
+    return {
+      category_code: base.code,
+      category_name: found ? found.category_name : base.name,
+      percentage: found ? found.percentage : 0,
+    }
+  })
+})
+
+
 </script>
 
 <template>
@@ -63,7 +91,11 @@ const formatTime = (isoString: string) => {
         </BaseCard>
 
         <!-- Active Routine -->
-        <BaseCard class="active-routine-card" padding="0">
+        <BaseCard 
+          class="active-routine-card" 
+          :class="{ 'is-active-snake': dashboardData.active_routine }"
+          padding="0"
+        >
           <div class="active-routine-content" v-if="dashboardData.active_routine">
             <div class="routine-info">
               <span class="badge">ACTIVE ROUTINE</span>
@@ -95,11 +127,11 @@ const formatTime = (isoString: string) => {
         </BaseCard>
       </div>
 
-      <!-- Middle Row -->
+      <!-- Metrics Row -->
       <BaseCard title="DAILY PROGRESS" class="metrics-card">
-        <div class="metrics-container" v-if="dashboardData.daily_progress && dashboardData.daily_progress.length > 0">
+        <div class="metrics-container" v-if="displayMetrics && displayMetrics.length > 0">
           <MetricCard 
-            v-for="metric in dashboardData.daily_progress" 
+            v-for="metric in displayMetrics" 
             :key="metric.category_code"
             :category="metric.category_code"
             :label="metric.category_name"
@@ -254,6 +286,37 @@ const formatTime = (isoString: string) => {
 .active-routine-card {
   background: linear-gradient(135deg, #F5F3FF 0%, #EDE9FE 100%);
   border: none;
+}
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.is-active-snake {
+  position: relative;
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+.is-active-snake::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(from var(--angle), transparent 70%, var(--color-primary) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: snake-spin 2s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes snake-spin {
+  to { --angle: 360deg; }
 }
 
 .active-routine-content {
