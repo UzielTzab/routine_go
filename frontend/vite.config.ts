@@ -12,6 +12,7 @@ export default defineConfig({
         enabled: true
       },
       includeAssets: ['favicon.ico', 'images/routine_go_logo.png'],
+      manifestFilename: 'manifest.json',
       manifest: {
         name: 'Uziel OS',
         short_name: 'UzielOS',
