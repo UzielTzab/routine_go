@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import BaseCard from '../../shared/components/BaseCard.vue'
 import BaseInput from '../../shared/components/BaseInput.vue'

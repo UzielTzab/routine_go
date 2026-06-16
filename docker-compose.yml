@@ -1,6 +1,34 @@
 version: '3.8'
 
 services:
+  nginx-proxy:
+    image: nginxproxy/nginx-proxy:alpine
+    container_name: nginx-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - conf:/etc/nginx/conf.d
+      - vhost:/etc/nginx/vhost.d
+      - html:/usr/share/nginx/html
+      - dhparam:/etc/nginx/dhparam
+      - certs:/etc/nginx/certs:ro
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+
+  acme-companion:
+    image: nginxproxy/acme-companion
+    container_name: nginx-proxy-acme
+    restart: always
+    environment:
+      - DEFAULT_EMAIL=${LETSENCRYPT_EMAIL:-admin@example.com}
+    volumes_from:
+      - nginx-proxy
+    volumes:
+      - certs:/etc/nginx/certs:rw
+      - acme:/etc/acme.sh
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
   db:
     image: postgres:15-alpine
     container_name: uziel_os_db
@@ -31,8 +59,9 @@ services:
     command: /app/entrypoint.sh
     volumes:
       - ./backend:/app
-    ports:
-      - "${BACKEND_PORT:-8000}:8000"
+    # Remove port mapping to host so only Nginx serves it
+    expose:
+      - "8000"
     env_file:
       - ./backend/.env
     environment:
@@ -40,6 +69,10 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      # Nginx Proxy config
+      - VIRTUAL_HOST=${DOMAIN}
+      - LETSENCRYPT_HOST=${DOMAIN}
+      - VIRTUAL_PORT=8000
     depends_on:
       - db
       - redis
@@ -87,3 +120,9 @@ services:
 volumes:
   postgres_data:
   redis_data:
+  conf:
+  vhost:
+  html:
+  dhparam:
+  certs:
+  acme:

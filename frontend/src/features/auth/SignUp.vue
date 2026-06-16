@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import BaseInput from '../../shared/components/BaseInput.vue'
 import BaseButton from '../../shared/components/BaseButton.vue'
-import BaseSwitch from '../../shared/components/BaseSwitch.vue'
+
 import { authApi } from '../../shared/api/auth.api'
 
 const router = useRouter()

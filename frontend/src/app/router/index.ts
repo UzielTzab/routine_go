@@ -55,7 +55,7 @@ export const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
   const isAuthRoute = to.path === '/login' || to.path === '/signup'
 
