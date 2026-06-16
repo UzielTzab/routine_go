@@ -476,6 +476,9 @@ const confirmAction = async () => {
 
   .main-btn {
     width: 100%;
+  }
+
+  .action-buttons .main-btn {
     order: -1; /* Make complete button appear first on mobile */
   }
 
