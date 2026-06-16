@@ -278,7 +278,6 @@ onMounted(async () => {
       v-model="isModalOpen" 
       :title="actionTitleMap[selectedAction] || 'Confirmar Acción'"
     >
-      <p v-if="selectedAction === 'complete'">
       <div class="modal-content-inner">
         <div v-if="selectedAction === 'delete'" class="delete-warning">
           <span class="material-symbols-outlined warning-icon">warning</span>

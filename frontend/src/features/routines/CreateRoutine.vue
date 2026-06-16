@@ -16,17 +16,10 @@ const { categories, loadingCategories, errorCategories, loadingCreate, createSuc
 const routineName = ref('')
 const selectedCategoryId = ref<number | string | null>(null)
 const startTime = ref('08:00 AM')
-const duration = ref('2 horas')
+const endTime = ref('10:00 AM')
 const selectedDays = ref(['J'])
 const reminder = ref('10 minutos antes')
 const autoComplete = ref(false)
-
-// Options
-const durationOptions = [
-  { value: '1 hora', label: '1 hora' },
-  { value: '2 horas', label: '2 horas' },
-  { value: '3 horas', label: '3 horas' },
-]
 
 const reminderOptions = [
   { value: '5 minutos antes', label: '5 minutos antes' },
@@ -70,12 +63,6 @@ const handleSave = async () => {
     return
   }
   
-  // Helper to parse duration string to minutes
-  const parseDuration = (dur: string) => {
-    const hours = parseInt(dur.split(' ')[0]) || 0
-    return hours * 60
-  }
-
   // Helper to parse "08:00 AM" to "HH:MM"
   const parseTime = (timeStr: string) => {
     const [time, modifier] = timeStr.split(' ')
@@ -87,13 +74,25 @@ const handleSave = async () => {
     return `${hours}:${minutes}`
   }
 
+  // Calculate duration in minutes
+  const calculateDuration = () => {
+    const startStr = parseTime(startTime.value)
+    const endStr = parseTime(endTime.value)
+    const [startH, startM] = startStr.split(':').map(Number)
+    const [endH, endM] = endStr.split(':').map(Number)
+    
+    let diff = (endH * 60 + endM) - (startH * 60 + startM)
+    if (diff <= 0) diff += 24 * 60 // cross midnight
+    return diff
+  }
+
   // Helper to map days to integers if needed by backend, 
   // but for now we send the array as requested:
   const dayMap: Record<string, string> = { 'L': '0', 'M': '1', 'X': '2', 'J': '3', 'V': '4', 'S': '5', 'D': '6' }
   const payload = {
     title: routineName.value,
     category: selectedCategoryId.value,
-    default_duration_minutes: parseDuration(duration.value),
+    default_duration_minutes: calculateDuration(),
     schedule_rules: [{
       days_of_week: selectedDays.value.map(d => dayMap[d]).join(','),
       start_time: parseTime(startTime.value),
@@ -175,10 +174,9 @@ onMounted(async () => {
                 v-model="startTime"
                 label="HORA DE INICIO"
               />
-              <BaseSelect 
-                v-model="duration"
-                label="DURACIÓN"
-                :options="durationOptions"
+              <TimePicker 
+                v-model="endTime"
+                label="HORA DE FIN"
               />
             </div>
 
@@ -312,6 +310,8 @@ onMounted(async () => {
 .categories-row {
   display: flex;
   gap: var(--space-4);
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .category-btn {
@@ -325,6 +325,7 @@ onMounted(async () => {
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   position: relative;
+  flex-shrink: 0;
 }
 
 .category-btn::after {
@@ -360,6 +361,8 @@ onMounted(async () => {
 .days-row {
   display: flex;
   gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .day-btn {
@@ -376,6 +379,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .day-btn.is-active {

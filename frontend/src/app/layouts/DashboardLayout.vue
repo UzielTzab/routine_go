@@ -61,9 +61,6 @@ const userInitial = computed(() => {
       </nav>
 
       <div class="sidebar-footer">
-        <button class="btn-start-routine">
-          <span class="material-symbols-outlined">play_arrow</span> Start Routine
-        </button>
       </div>
     </aside>
 
@@ -227,22 +224,6 @@ const userInitial = computed(() => {
   margin-top: auto;
 }
 
-.btn-start-routine {
-  width: 100%;
-  padding: 1rem;
-  background-color: var(--color-primary);
-  color: var(--sidebar-bg);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-2);
-}
-
 .topbar-right {
   display: flex;
   gap: var(--space-4);
@@ -258,10 +239,6 @@ const userInitial = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-.icon-btn .material-symbols-outlined {
-  font-size: 1.5rem;
 }
 
 .icon-btn:hover {

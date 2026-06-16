@@ -279,12 +279,12 @@ const confirmAction = async () => {
 <style scoped>
 .active-routine-page {
   position: relative;
-  height: 100%;
+  min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .bg-plants {

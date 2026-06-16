@@ -70,9 +70,6 @@ const userInitial = computed(() => {
       </nav>
 
       <div class="sidebar-footer">
-        <button class="btn-start-routine" @click="emit('close-drawer')">
-          <span class="material-symbols-outlined">play_arrow</span> Start Routine
-        </button>
         <button class="btn-logout" @click="handleLogout">
           <span class="material-symbols-outlined">logout</span> Cerrar Sesión
         </button>
@@ -224,26 +221,6 @@ const userInitial = computed(() => {
 
 .sidebar-footer {
   margin-top: auto;
-}
-
-.btn-start-routine {
-  width: 100%;
-  padding: 1rem;
-  background-color: var(--color-primary);
-  color: var(--sidebar-bg);
-  border: none;
-  border-radius: var(--radius-lg);
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.btn-start-routine .material-symbols-outlined {
-  font-size: 1.25rem;
 }
 
 .btn-logout {
