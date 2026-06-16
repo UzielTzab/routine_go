@@ -460,6 +460,10 @@ const confirmAction = async () => {
 }
 
 @media (max-width: 768px) {
+  .info-card {
+    display: none;
+  }
+
   .timer-circle-large {
     width: 280px;
     height: 280px;
@@ -497,8 +501,7 @@ const confirmAction = async () => {
 
 .empty-icon {
   font-size: 6rem;
-  color: var(--text-gray);
-  opacity: 0.5;
+  color: var(--color-primary);
   margin-bottom: var(--space-2);
 }
 

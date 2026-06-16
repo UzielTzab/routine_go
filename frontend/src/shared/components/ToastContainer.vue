@@ -77,4 +77,17 @@ const getIcon = (type: string) => {
   opacity: 0;
   transform: translateY(30px);
 }
+
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: 90px;
+    left: var(--space-4);
+    right: var(--space-4);
+    align-items: center;
+  }
+  .toast {
+    min-width: unset;
+    width: 100%;
+  }
+}
 </style>
