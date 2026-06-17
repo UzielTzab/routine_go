@@ -27,6 +27,7 @@ const actionTitleMap: Record<string, string> = {
   snooze: 'Posponer Rutina',
   skip: 'Omitir Rutina',
   startEarly: 'Iniciar Anticipadamente',
+  start: 'Iniciar Rutina',
   delete: 'Eliminar Rutina'
 }
 
@@ -314,6 +315,9 @@ onMounted(async () => {
         </p>
         <p v-else-if="selectedAction === 'startEarly'">
           Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
+        </p>
+        <p v-else-if="selectedAction === 'start'">
+          ¿Estás listo para iniciar la rutina '{{ selectedItem?.routine?.title }}' y comenzar a concentrarte?
         </p>
         <p v-else-if="selectedAction === 'skip'">
           ¿Seguro que deseas omitir la rutina '{{ selectedItem?.routine?.title }}'?

@@ -119,7 +119,8 @@ const upcomingRoutines = computed(() => {
 
 const handleStartClick = (item: any) => {
   if (activeItem.value) {
-    alert('Ya tienes una rutina en progreso.')
+    selectedItem.value = null
+    openModal('alreadyInProgress')
     return
   }
   
@@ -132,13 +133,12 @@ const handleStartClick = (item: any) => {
     }
   }
   
-  startExecution(item)
+  selectedItem.value = item
+  openModal('start')
 }
 
 const startExecution = async (item: any) => {
   await scheduleStore.startExecution(item.id)
-  // Al iniciar, tenemos que refrescar la vista.
-  // ActiveRoutine hace fetchToday en onMounted, pero podemos recargar manualmente:
   window.location.reload()
 }
 
@@ -149,7 +149,9 @@ const selectedItem = ref<any>(null)
 const actionTitleMap: Record<string, string> = {
   complete: 'Completar Rutina',
   skip: 'Omitir Rutina',
-  startEarly: 'Iniciar Anticipadamente'
+  startEarly: 'Iniciar Anticipadamente',
+  start: 'Iniciar Rutina',
+  alreadyInProgress: 'Atención'
 }
 
 const openModal = (action: string) => {
@@ -164,7 +166,7 @@ const closeModal = () => {
 }
 
 const confirmAction = async () => {
-  if (selectedAction.value === 'startEarly' && selectedItem.value) {
+  if ((selectedAction.value === 'startEarly' || selectedAction.value === 'start') && selectedItem.value) {
     await startExecution(selectedItem.value)
   } else if (activeItem.value) {
     if (selectedAction.value === 'complete') {
@@ -266,22 +268,28 @@ const confirmAction = async () => {
       v-model="isModalOpen" 
       :title="actionTitleMap[selectedAction] || 'Confirmar Acción'"
     >
-      <p v-if="selectedAction === 'complete'">
-        ¿Seguro que deseas marcar '{{ activeItem?.routine?.title }}' como completada? ¡Gran trabajo!
-      </p>
-      <p v-else-if="selectedAction === 'skip'">
-        ¿Seguro que deseas omitir el resto de la rutina '{{ activeItem?.routine?.title }}'?
-      </p>
-      <p v-else-if="selectedAction === 'startEarly'">
-        Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
-      </p>
-      <p v-else>
-        ¿Confirmar esta acción?
-      </p>
+      <div>
+        <p v-if="selectedAction === 'complete'">
+          ¿Seguro que deseas completar la rutina activa?
+        </p>
+        <p v-else-if="selectedAction === 'skip'">
+          ¿Seguro que deseas omitir esta rutina en progreso?
+        </p>
+        <p v-else-if="selectedAction === 'startEarly'">
+          Todavía falta para tu rutina '{{ selectedItem?.routine?.title }}'. ¿Seguro que deseas iniciarla anticipadamente?
+        </p>
+        <p v-else-if="selectedAction === 'start'">
+          ¿Estás listo para iniciar la rutina '{{ selectedItem?.routine?.title }}' y comenzar a concentrarte?
+        </p>
+        <p v-else-if="selectedAction === 'alreadyInProgress'">
+          Ya tienes una rutina en progreso. Debes completarla u omitirla antes de iniciar una nueva.
+        </p>
+      </div>
 
       <template #footer>
-        <BaseButton variant="ghost" @click="closeModal">Cancelar</BaseButton>
-        <BaseButton variant="primary" @click="confirmAction">Confirmar</BaseButton>
+        <BaseButton v-if="selectedAction !== 'alreadyInProgress'" variant="ghost" @click="closeModal">Cancelar</BaseButton>
+        <BaseButton v-if="selectedAction === 'alreadyInProgress'" variant="primary" @click="closeModal">Entendido</BaseButton>
+        <BaseButton v-else variant="primary" @click="confirmAction">Confirmar</BaseButton>
       </template>
     </BaseModal>
   </div>

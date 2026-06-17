@@ -57,9 +57,16 @@ const toggleDay = (dayId: string) => {
   }
 }
 
+import { useRouter } from 'vue-router'
+import BaseModal from '../../shared/components/BaseModal.vue'
+
+const router = useRouter()
+const showValidationModal = ref(false)
+const showSuccessModal = ref(false)
+
 const handleSave = async () => {
   if (!routineName.value || !selectedCategoryId.value) {
-    alert('Por favor ingresa un nombre y selecciona una categoría.')
+    showValidationModal.value = true
     return
   }
   
@@ -105,13 +112,17 @@ const handleSave = async () => {
   try {
     await routineStore.createRoutine(payload)
     if (createSuccess.value) {
-      alert('¡Rutina creada con éxito!')
-      // Optional: reset form
+      showSuccessModal.value = true
       routineName.value = ''
     }
   } catch (e) {
     console.error(e)
   }
+}
+
+const handleSuccessConfirm = () => {
+  showSuccessModal.value = false
+  router.push('/agenda')
 }
 
 onMounted(async () => {
@@ -231,6 +242,24 @@ onMounted(async () => {
         </BaseCard>
       </form>
     </div>
+    <!-- Modales -->
+    <BaseModal v-model="showValidationModal" title="Datos incompletos">
+      <p>Por favor ingresa un nombre y selecciona una categoría para tu rutina.</p>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end;">
+          <BaseButton variant="primary" @click="showValidationModal = false">Entendido</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <BaseModal v-model="showSuccessModal" title="¡Rutina Creada!">
+      <p>Tu rutina se ha creado exitosamente y ya está programada.</p>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end;">
+          <BaseButton variant="primary" @click="handleSuccessConfirm">Ir a la Agenda</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 

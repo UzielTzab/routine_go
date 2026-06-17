@@ -5,6 +5,7 @@ import BaseInput from '../../shared/components/BaseInput.vue'
 import BaseButton from '../../shared/components/BaseButton.vue'
 
 import { authApi } from '../../shared/api/auth.api'
+import BaseModal from '../../shared/components/BaseModal.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -15,13 +16,19 @@ const password = ref('')
 const confirmPassword = ref('')
 const agreeTerms = ref(false)
 
+const showValidationModal = ref(false)
+const validationMessage = ref('')
+const showSuccessModal = ref(false)
+
 const handleSignUp = async () => {
   if (password.value !== confirmPassword.value) {
-    alert("Las contraseñas no coinciden")
+    validationMessage.value = "Las contraseñas no coinciden"
+    showValidationModal.value = true
     return
   }
   if (!agreeTerms.value) {
-    alert("Debes aceptar los términos")
+    validationMessage.value = "Debes aceptar los términos"
+    showValidationModal.value = true
     return
   }
   
@@ -32,13 +39,18 @@ const handleSignUp = async () => {
       email: email.value,
       password: password.value
     })
-    alert('Cuenta creada exitosamente. Por favor, inicia sesión.')
-    router.push('/login')
+    showSuccessModal.value = true
   } catch (error: any) {
-    alert(error.response?.data?.detail || 'Error al registrar')
+    validationMessage.value = error.response?.data?.detail || 'Error al registrar'
+    showValidationModal.value = true
   } finally {
     loading.value = false
   }
+}
+
+const handleSuccessConfirm = () => {
+  showSuccessModal.value = false
+  router.push('/login')
 }
 </script>
 
@@ -142,6 +154,24 @@ const handleSignUp = async () => {
         </form>
       </div>
     </div>
+    <!-- Modales -->
+    <BaseModal v-model="showValidationModal" title="Atención">
+      <p>{{ validationMessage }}</p>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end;">
+          <BaseButton variant="primary" @click="showValidationModal = false">Entendido</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
+
+    <BaseModal v-model="showSuccessModal" title="¡Cuenta Creada!">
+      <p>Tu cuenta se ha creado exitosamente. Por favor, inicia sesión para continuar.</p>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end;">
+          <BaseButton variant="primary" @click="handleSuccessConfirm">Ir a Iniciar Sesión</BaseButton>
+        </div>
+      </template>
+    </BaseModal>
   </div>
 </template>
 
