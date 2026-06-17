@@ -32,29 +32,23 @@ const formatTime = (isoString: string) => {
 }
 
 const displayMetrics = computed(() => {
-  const baseCategories = [
-    { code: 'hygiene', name: 'Higiene' },
-    { code: 'exercise', name: 'Ejercicio' },
-    { code: 'focus', name: 'Foco' },
-    { code: 'nutrition', name: 'Alimentación' },
-    { code: 'sleep', name: 'Descanso' }
-  ]
-  
   const backendMetrics = dashboardData.value?.daily_progress || []
   
-  return baseCategories.map(base => {
-    // Try to find a match from backend by name or code
-    const found = backendMetrics.find((m: any) => 
-      (m.category_name || '').toLowerCase().includes(base.name.toLowerCase()) || 
-      (m.category_code || '').toLowerCase().includes(base.code)
-    )
-    
-    return {
-      category_code: base.code,
-      category_name: found ? found.category_name : base.name,
-      percentage: found ? found.percentage : 0,
-    }
-  })
+  if (backendMetrics.length === 0) {
+    return [
+      { category_code: 'hygiene', category_name: 'Higiene', percentage: 0 },
+      { category_code: 'exercise', category_name: 'Ejercicio', percentage: 0 },
+      { category_code: 'focus', category_name: 'Foco', percentage: 0 },
+      { category_code: 'nutrition', category_name: 'Alimentación', percentage: 0 },
+      { category_code: 'sleep', category_name: 'Descanso', percentage: 0 }
+    ]
+  }
+
+  return backendMetrics.map((m: any) => ({
+    category_code: m.category_code || 'unknown',
+    category_name: m.category_name || 'Desconocido',
+    percentage: m.percentage || 0
+  }))
 })
 
 

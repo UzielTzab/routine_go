@@ -25,6 +25,13 @@ export const useAuthStore = defineStore('auth', () => {
       
       localStorage.setItem('isAuthenticated', 'true')
       localStorage.setItem('user', JSON.stringify(userData))
+      
+      // Solicitar permisos de notificación tras el login exitoso
+      import('../../notifications/stores/useNotificationStore').then(({ useNotificationStore }) => {
+        const notificationStore = useNotificationStore()
+        notificationStore.requestPermission()
+      })
+      
       router.push('/')
     } catch (err: any) {
       error.value = err.response?.data?.detail || err.message || 'Error al iniciar sesión'

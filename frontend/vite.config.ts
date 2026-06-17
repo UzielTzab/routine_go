@@ -7,9 +7,16 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       registerType: 'autoUpdate',
+      injectManifest: {
+        injectionPoint: undefined,
+      },
       devOptions: {
-        enabled: true
+        enabled: true,
+        type: 'module'
       },
       includeAssets: ['favicon.ico', 'images/routine_go_logo.png'],
       manifestFilename: 'manifest.json',

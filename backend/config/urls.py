@@ -13,4 +13,5 @@ urlpatterns = [
     path('api/schedule/', include('apps.schedule.urls')),
     path('api/executions/', include('apps.executions.urls')),
     path('api/analytics/', include('apps.analytics.urls')),
+    path('api/notifications/', include('apps.notifications.urls')),
 ]

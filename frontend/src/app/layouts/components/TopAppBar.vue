@@ -1,10 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from '../../../features/auth/stores/useAuthStore'
+import { useNotificationStore } from '../../../features/notifications/stores/useNotificationStore'
+import NotificationPanel from '../../../features/notifications/components/NotificationPanel.vue'
 
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
 
 const emit = defineEmits(['toggle-drawer'])
+
+const isNotificationsOpen = ref(false)
 
 const userInitial = computed(() => {
   return authStore.user?.name?.charAt(0).toUpperCase() || 'U'
@@ -22,14 +27,19 @@ const userInitial = computed(() => {
     </div>
     
     <div class="actions-right">
-      <button class="icon-btn">
-        <span class="material-symbols-outlined">notifications</span>
-      </button>
+      <div class="notification-wrapper">
+        <button class="icon-btn" @click="isNotificationsOpen = true">
+          <span class="material-symbols-outlined">notifications</span>
+          <span v-if="notificationStore.unreadCount > 0" class="badge">{{ notificationStore.unreadCount }}</span>
+        </button>
+      </div>
       <button class="icon-btn avatar-btn">
         <span class="avatar-initial-small">{{ userInitial }}</span>
       </button>
     </div>
   </header>
+
+  <NotificationPanel :isOpen="isNotificationsOpen" @close="isNotificationsOpen = false" />
 </template>
 
 <style scoped>
@@ -103,5 +113,24 @@ const userInitial = computed(() => {
   .top-app-bar {
     display: none;
   }
+}
+
+.notification-wrapper {
+  position: relative;
+}
+
+.badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background-color: var(--status-expired, #EF4444);
+  color: white;
+  border-radius: 50%;
+  padding: 2px 6px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

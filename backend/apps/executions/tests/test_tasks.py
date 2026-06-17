@@ -37,7 +37,7 @@ class CeleryTasksTestCase(TestCase):
         # Verificar estado
         execution.refresh_from_db()
         self.assertEqual(execution.status, 'OMITTED')
-        self.assertIn("1 ejecuciones marcadas", result)
+        self.assertIn("1 ejecuciones procesadas", result)
 
     def test_check_expired_executions_task_grace_period(self):
         # Crear una ejecución que terminó hace 10 minutos (dentro del grace period de 15)
@@ -55,7 +55,8 @@ class CeleryTasksTestCase(TestCase):
         execution.refresh_from_db()
         self.assertEqual(execution.status, 'PENDING') # No debería cambiar
 
-    def test_prepare_upcoming_notifications_task(self):
+    @patch('apps.executions.tasks.webpush')
+    def test_prepare_upcoming_notifications_task(self, mock_webpush):
         # Crear una ejecución que empezará en 5 minutos
         future_time = timezone.now() + timedelta(minutes=5)
         execution = RoutineExecution.objects.create(
@@ -72,7 +73,7 @@ class CeleryTasksTestCase(TestCase):
         execution.refresh_from_db()
         self.assertTrue(execution.notification_sent)
         self.assertEqual(Notification.objects.count(), 1)
-        self.assertIn("1 notificaciones preparadas", result)
+        self.assertIn("1 notificaciones preparadas y enviadas", result)
 
     def test_prepare_upcoming_notifications_task_ignores_far_future(self):
         # Crear ejecución en 20 minutos (más de los 10 mins de reminder)

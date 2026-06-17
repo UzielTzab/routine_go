@@ -54,6 +54,11 @@ def check_expired_executions_task():
             
     return f"{count} ejecuciones procesadas (completadas u omitidas)."
 
+import json
+from pywebpush import webpush, WebPushException
+from django.conf import settings
+from apps.notifications.models import Notification, PushSubscription
+
 @shared_task
 def prepare_upcoming_notifications_task():
     """
@@ -75,20 +80,55 @@ def prepare_upcoming_notifications_task():
     executions_to_update = []
     
     for execution in upcoming_executions:
-        notifications_to_create.append(
-            Notification(
-                user=execution.user,
-                execution=execution,
-                title=f"¡Tu rutina '{execution.routine.title}' está por comenzar!",
-                message=f"Prepárate. Tienes agendada esta rutina para las {execution.scheduled_start.strftime('%H:%M')}."
-            )
+        notif = Notification(
+            user=execution.user,
+            execution=execution,
+            title=f"¡Tu rutina '{execution.routine.title}' está por comenzar!",
+            message=f"Prepárate. Tienes agendada esta rutina para las {execution.scheduled_start.strftime('%H:%M')}."
         )
+        notifications_to_create.append(notif)
         execution.notification_sent = True
         executions_to_update.append(execution)
         count += 1
+        
+        # Enviar Web Push a todas las suscripciones del usuario
+        payload = json.dumps({
+            "title": notif.title,
+            "body": notif.message,
+            "data": {
+                "execution_id": str(execution.id)
+            },
+            "actions": [
+                {"action": "start", "title": "Iniciar"}
+            ]
+        })
+        
+        subscriptions = PushSubscription.objects.filter(user=execution.user)
+        for sub in subscriptions:
+            try:
+                webpush(
+                    subscription_info={
+                        "endpoint": sub.endpoint,
+                        "keys": {
+                            "p256dh": sub.p256dh,
+                            "auth": sub.auth
+                        }
+                    },
+                    data=payload,
+                    vapid_private_key=settings.VAPID_PRIVATE_KEY,
+                    vapid_claims={
+                        "sub": settings.VAPID_ADMIN_EMAIL
+                    }
+                )
+            except WebPushException as ex:
+                if ex.response is not None and ex.response.status_code in [404, 410]:
+                    # Suscripción caducada o inválida, se elimina
+                    sub.delete()
+                else:
+                    print(f"Error enviando push a {sub.user.username}: {ex}")
 
     if count > 0:
         Notification.objects.bulk_create(notifications_to_create)
         RoutineExecution.objects.bulk_update(executions_to_update, ['notification_sent'])
 
-    return f"{count} notificaciones preparadas."
+    return f"{count} notificaciones preparadas y enviadas."
