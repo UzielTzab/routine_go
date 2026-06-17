@@ -29,6 +29,11 @@ self.addEventListener('push', (event) => {
     actions: payload.actions || []
   }
 
+  // Notify any open clients that a new notification arrived
+  self.clients.matchAll().then(clients => {
+    clients.forEach(client => client.postMessage({ type: 'NEW_NOTIFICATION' }))
+  })
+
   event.waitUntil(self.registration.showNotification(title, options))
 })
 

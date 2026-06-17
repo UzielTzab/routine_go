@@ -1,12 +1,28 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import TopAppBar from './components/TopAppBar.vue'
 import BottomNavigation from './components/BottomNavigation.vue'
 import MobileDrawer from './components/MobileDrawer.vue'
 import { useAuthStore } from '../../features/auth/stores/useAuthStore'
+import { useNotificationStore } from '../../features/notifications/stores/useNotificationStore'
 
 const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
+
+onMounted(() => {
+  // Fetch initial notifications
+  notificationStore.fetchNotifications()
+  
+  // Listen for messages from the service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'NEW_NOTIFICATION') {
+        notificationStore.fetchNotifications()
+      }
+    })
+  }
+})
 
 const isDrawerOpen = ref(false)
 
