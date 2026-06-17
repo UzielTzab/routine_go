@@ -16,8 +16,8 @@ const { categories, loadingCategories, errorCategories, loadingCreate, createSuc
 const routineName = ref('')
 const selectedCategoryId = ref<number | string | null>(null)
 const startTime = ref('08:00 AM')
-const endTime = ref('10:00 AM')
-const selectedDays = ref(['J'])
+const endTime = ref('09:00 AM')
+const selectedDays = ref<string[]>(['L', 'M', 'X', 'J', 'V'])
 const reminder = ref('5 minutos antes')
 const autoComplete = ref(true)
 
