@@ -59,8 +59,16 @@ export const useNotificationStore = defineStore('notification', () => {
         })
       }
       
+      // Parse subscription to extract keys
+      const subJson = subscription.toJSON()
+      const payload = {
+        endpoint: subJson.endpoint,
+        p256dh: subJson.keys?.p256dh,
+        auth: subJson.keys?.auth
+      }
+      
       // Enviar suscripción al backend
-      await notificationsApi.subscribe(subscription as unknown as PushSubscription)
+      await notificationsApi.subscribe(payload as any)
       console.log('Suscripción Web Push enviada al backend exitosamente.')
     } catch (e) {
       console.error('Error al suscribirse al Web Push:', e)

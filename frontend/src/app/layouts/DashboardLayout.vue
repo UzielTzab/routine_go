@@ -4,11 +4,14 @@ import { RouterView } from 'vue-router'
 import TopAppBar from './components/TopAppBar.vue'
 import BottomNavigation from './components/BottomNavigation.vue'
 import MobileDrawer from './components/MobileDrawer.vue'
+import NotificationPanel from '../../features/notifications/components/NotificationPanel.vue'
 import { useAuthStore } from '../../features/auth/stores/useAuthStore'
 import { useNotificationStore } from '../../features/notifications/stores/useNotificationStore'
 
 const authStore = useAuthStore()
 const notificationStore = useNotificationStore()
+
+const isDesktopNotificationsOpen = ref(false)
 
 onMounted(() => {
   // Fetch initial notifications
@@ -77,15 +80,22 @@ const userInitial = computed(() => {
       </nav>
 
       <div class="sidebar-footer">
+        <button class="logout-btn" @click="authStore.logout">
+          <span class="material-symbols-outlined">logout</span>
+          Cerrar Sesión
+        </button>
       </div>
     </aside>
 
     <main class="main-content">
       <header class="topbar desktop-only">
         <div class="topbar-right">
-          <button class="icon-btn">
-            <span class="material-symbols-outlined">notifications</span>
-          </button>
+          <div class="notification-wrapper">
+            <button class="icon-btn" @click="isDesktopNotificationsOpen = true">
+              <span class="material-symbols-outlined">notifications</span>
+              <span v-if="notificationStore.unreadCount > 0" class="badge">{{ notificationStore.unreadCount }}</span>
+            </button>
+          </div>
           <button class="icon-btn">
             <span class="material-symbols-outlined">settings</span>
           </button>
@@ -96,6 +106,9 @@ const userInitial = computed(() => {
         <RouterView />
       </div>
     </main>
+
+    <!-- Desktop Notification Panel -->
+    <NotificationPanel :isOpen="isDesktopNotificationsOpen" @close="isDesktopNotificationsOpen = false" />
 
     <!-- Mobile Bottom Navigation -->
     <BottomNavigation />

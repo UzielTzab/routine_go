@@ -578,6 +578,21 @@ onMounted(async () => {
   font-size: 0.85rem;
 }
 
+.edit-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-btn:hover {
+  opacity: 0.8;
+  color: var(--color-primary-deep);
+}
+
 @media (max-width: 768px) {
   .agenda-timeline {
     padding-left: 0;
