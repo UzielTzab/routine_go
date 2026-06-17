@@ -56,11 +56,22 @@ onMounted(async () => {
     
     remainingMs.value = Math.max(0, totalDurationMs - elapsedMs)
     
-    timerInterval.value = setInterval(() => {
+    const rules = activeItem.value.routine?.schedule_rules || []
+    const isAutoComplete = rules.length > 0 ? rules[0].auto_complete : false
+    
+    timerInterval.value = setInterval(async () => {
       if (remainingMs.value > 0) {
         remainingMs.value -= 1000
       } else {
         clearInterval(timerInterval.value)
+        if (isAutoComplete && activeItem.value) {
+          try {
+            await scheduleStore.completeExecution(activeItem.value.id)
+            router.push('/')
+          } catch (e) {
+            console.error('Error auto-completing routine:', e)
+          }
+        }
       }
     }, 1000)
   }

@@ -25,19 +25,34 @@ def check_expired_executions_task():
     count = 0
     for execution in expired_executions:
         try:
-            # Utilizamos la máquina de estados para ser consistentes con las reglas de negocio
-            ExecutionStateMachineService.omit(execution)
-            if execution.notes:
-                execution.notes += f"\nMarcada como omitida automáticamente por vencimiento (límite superado en más de {GRACE_PERIOD_MINUTES} min)."
+            # Check if any rule has auto_complete=True
+            is_auto_complete = False
+            rules = execution.routine.schedule_rules.all()
+            for r in rules:
+                if r.auto_complete:
+                    is_auto_complete = True
+                    break
+
+            if is_auto_complete and execution.status == 'IN_PROGRESS':
+                ExecutionStateMachineService.complete(execution)
+                if execution.notes:
+                    execution.notes += "\nMarcada como completada automáticamente por auto-completado."
+                else:
+                    execution.notes = "Marcada como completada automáticamente por auto-completado."
+                execution.save(update_fields=['notes'])
             else:
-                execution.notes = f"Marcada como omitida automáticamente por vencimiento (límite superado en más de {GRACE_PERIOD_MINUTES} min)."
-            execution.save(update_fields=['notes'])
+                ExecutionStateMachineService.omit(execution)
+                if execution.notes:
+                    execution.notes += f"\nMarcada como omitida automáticamente por vencimiento (límite superado en más de {GRACE_PERIOD_MINUTES} min)."
+                else:
+                    execution.notes = f"Marcada como omitida automáticamente por vencimiento (límite superado en más de {GRACE_PERIOD_MINUTES} min)."
+                execution.save(update_fields=['notes'])
             count += 1
         except Exception as e:
             # En producción, se logearía el error e intentaría continuar
-            print(f"Error omitiendo execution {execution.id}: {str(e)}")
+            print(f"Error procesando execution {execution.id}: {str(e)}")
             
-    return f"{count} ejecuciones marcadas como OMITTED."
+    return f"{count} ejecuciones procesadas (completadas u omitidas)."
 
 @shared_task
 def prepare_upcoming_notifications_task():
